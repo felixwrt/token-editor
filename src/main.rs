@@ -1,3 +1,3 @@
 fn main() {
-    println!("Hello, world!");
+    yew::start_app::<token_editor::Model>();
 }
