@@ -4,6 +4,8 @@ use stdweb::web::event::KeyDownEvent;
 use stdweb::web::event::IKeyboardEvent;
 use stdweb::web::event::IEvent;
 
+mod content;
+
 #[derive(Clone)]
 struct CursorPos {
     line: usize,
