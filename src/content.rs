@@ -2,7 +2,7 @@
 use std::string::ToString;
 
 #[derive(Clone, Debug)]
-struct Content {
+pub struct Content {
     elmts: Vec<Elmt>,
     cursor: (usize, usize),  // first element is the index of the selected whitespace element.
                              // the sectond element is the selection index within that whitespace element
@@ -10,29 +10,29 @@ struct Content {
 }
 
 #[derive(Clone, Debug)]
-struct Elmt {
+pub struct Elmt {
     character: char,
     whitespace: Whitespace,  // whitespace that's preceeding the character
 }
 
 #[derive(Clone, Debug)]
-struct Whitespace {
+pub struct Whitespace {
     typed: Vec<WhitespaceChar>,
     virtual_newlines: usize,
     virtual_spaces: usize,  // on last line
 }
 
 #[derive(Clone, Debug)]
-enum WhitespaceChar {
+pub enum WhitespaceChar {
     Space,
     Newline
 }
 
 #[derive(Clone, Debug)]
-struct CursorPos {
-    line: usize,
-    col: usize,
-    between: bool,
+pub struct CursorPos {
+    pub line: usize,
+    pub col: usize,
+    pub between: bool,
 }
 
 
@@ -46,7 +46,7 @@ impl WhitespaceChar {
 }
 
 
-trait GetString {
+pub trait GetString {
     fn get_string(&self) -> String;   // TODO: add option for visible whitespace
 }
 
@@ -86,7 +86,6 @@ impl GetString for Elmt {
 
 impl GetString for Content {
     fn get_string(&self) -> String {
-        
         let mut s: String = self.elmts.iter().map(|x| x.get_string()).collect();
         s.push_str(&self.final_whitespace.get_string());
         s
@@ -96,7 +95,7 @@ impl GetString for Content {
 
 
 impl Content {
-    fn from_strings(typed: &str, visible: &str) -> Content {
+    pub fn from_strings(typed: &str, visible: &str) -> Content {
         let mut chars = typed.chars();
         let mut visible_chars = visible.chars();
         let mut elmts = vec!();
@@ -152,8 +151,54 @@ impl Content {
         }
     }
 
-    fn cursor_pos(&self) -> CursorPos {
-        unimplemented!()
+    pub fn cursor_pos(&self) -> CursorPos {
+        let mut s: String = self.elmts.iter().take(self.cursor.0).map(|x| x.get_string()).collect();
+        let mut line = s.chars().filter(|x| x == &'\n').count();
+        let mut col = 0;
+        let mut init_col = s.chars().rev().take_while(|x| x != &'\n').count();
+        let mut between = false;
+        
+        let typed = &self.elmts[self.cursor.0].whitespace.typed;
+        for wc in typed.iter().take(self.cursor.1) {
+            match wc {
+                WhitespaceChar::Space => col += 1,
+                WhitespaceChar::Newline => {col = 0; line += 1; init_col = 0},
+            }
+        }
+
+        if self.cursor.1 > typed.len() {
+            init_col = 0;
+            col = 0;
+            line += self.cursor.1 - typed.len();
+        }
+
+        // last element selected
+        let virtual_spaces = self.elmts[self.cursor.0].whitespace.virtual_spaces;
+        if self.cursor.1 == self.elmts[self.cursor.0].whitespace.get_num_cursor_positions() - 1 && virtual_spaces > col {
+            between = ((virtual_spaces - col) % 2) > 0;
+            col += (virtual_spaces - col) / 2;
+        }
+
+        CursorPos {
+            line, col: init_col + col, between
+        }
+    }
+
+    pub fn cursor_left(&mut self) {
+        if self.cursor.1 > 0 {
+            self.cursor.1 -= 1;
+        } else if self.cursor.0 > 0 {
+            self.cursor = (self.cursor.0 - 1, self.elmts[self.cursor.0 - 1].whitespace.get_num_cursor_positions() - 1);
+        }
+    }
+
+    pub fn cursor_right(&mut self) {
+        if self.cursor.1 < self.elmts[self.cursor.0].whitespace.get_num_cursor_positions() - 1 {
+            self.cursor.1 += 1;
+        } else if self.cursor.0 < self.elmts.len() - 1 {
+            self.cursor = (self.cursor.0 + 1, 0);
+        }
+        // fixme: selection of final whitespace!
     }
 }
 

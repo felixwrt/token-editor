@@ -5,13 +5,7 @@ use stdweb::web::event::IKeyboardEvent;
 use stdweb::web::event::IEvent;
 
 mod content;
-
-#[derive(Clone)]
-struct CursorPos {
-    line: usize,
-    col: usize,
-    between: bool,
-}
+use content::{Content, CursorPos, GetString};
 
 pub struct Model {
     console: ConsoleService,
@@ -20,6 +14,7 @@ pub struct Model {
     cursor: CursorPos,
     cycle: Vec<CursorPos>,
     cycle_id: usize,
+    content: Content,
 }
 
 pub enum Msg {
@@ -33,11 +28,16 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+        //let typed = "fn test(&self,  other:\n  \n&mut usize){let x=(self+1)*other;\n return1<y}";
+        let typed = "fn test(&self, other:&mut usize){let x=(self+1)*other;return1<y}";
+        let visible = "fn test(&self, other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
+        let content = Content::from_strings(&typed, &visible);
+        
         Model {
             console: ConsoleService::new(),
             link,
-            text: "fn test() {\n    println!(\"hello\")\n}".to_string(),
-            cursor: CursorPos { line: 0, col: 9, between: true },
+            text: content.get_string(), //"fn test() {\n    println!(\"hello\")\n}".to_string(),
+            cursor: content.cursor_pos(), //CursorPos { line: 0, col: 9, between: true },
             cycle: vec!(
                 CursorPos { line: 0, col: 9, between: true },
                 CursorPos { line: 0, col: 9, between: false },
@@ -48,7 +48,8 @@ impl Component for Model {
                 CursorPos { line: 1, col: 6, between: false },
                 CursorPos { line: 1, col: 21, between: false },
             ),
-            cycle_id: 0
+            cycle_id: 0,
+            content
         }
     }
 
@@ -59,14 +60,16 @@ impl Component for Model {
                 e.prevent_default();
                 match e.key().as_ref() {
                     "ArrowLeft" => {
-                        self.cycle_id = (self.cycle_id + self.cycle.len() - 1) % self.cycle.len();
-                        self.cursor = self.cycle[self.cycle_id].clone();
-                        //self.view_model.left();
+                        // self.cycle_id = (self.cycle_id + self.cycle.len() - 1) % self.cycle.len();
+                        // self.cursor = self.cycle[self.cycle_id].clone();
+                        self.content.cursor_left();
+                        self.cursor = self.content.cursor_pos();
                     },
                     "ArrowRight" => {
-                        self.cycle_id = (self.cycle_id + 1) % self.cycle.len();
-                        self.cursor = self.cycle[self.cycle_id].clone();
-                        //self.view_model.right();
+                        // self.cycle_id = (self.cycle_id + 1) % self.cycle.len();
+                        // self.cursor = self.cycle[self.cycle_id].clone();
+                        self.content.cursor_right();
+                        self.cursor = self.content.cursor_pos();
                     },
                     "Backspace" => {
                         //self.console.log(&format!("{:?}", self.view_model.to_model_pos(false)));
