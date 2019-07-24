@@ -28,6 +28,14 @@ enum WhitespaceChar {
     Newline
 }
 
+#[derive(Clone, Debug)]
+struct CursorPos {
+    line: usize,
+    col: usize,
+    between: bool,
+}
+
+
 impl WhitespaceChar {
     fn is_newline(&self) -> bool {
         match self {
@@ -85,6 +93,8 @@ impl GetString for Content {
     }
 }
 
+
+
 impl Content {
     fn from_strings(typed: &str, visible: &str) -> Content {
         let mut chars = typed.chars();
@@ -141,6 +151,21 @@ impl Content {
             }
         }
     }
+
+    fn cursor_pos(&self) -> CursorPos {
+        unimplemented!()
+    }
+}
+
+impl Whitespace {
+    fn get_num_cursor_positions(&self) -> usize {
+        let num_typed_newlines = self.typed.iter().filter(|x| x.is_newline()).count();
+        let add_newlines = if num_typed_newlines < self.virtual_newlines {
+            self.virtual_newlines - num_typed_newlines
+        } else { 0 };
+        
+        self.typed.len() + 1 + add_newlines
+    }
 }
 
 #[cfg(test)]
@@ -166,5 +191,67 @@ mod tests {
         assert_eq!(&s, out);
     }
 
+    #[test]
+    fn test_num_cursor_positions() {
+        use WhitespaceChar::*;
+        let ws = Whitespace {
+            typed: vec!(),
+            virtual_newlines: 0,
+            virtual_spaces: 0,
+        };
+        assert_eq!(ws.get_num_cursor_positions(), 1);
+    }
+    #[test]
+    fn test_num_cursor_positions_typed_only() {
+        use WhitespaceChar::*;
+        let ws = Whitespace {
+            typed: vec!(Space, Space),
+            virtual_newlines: 0,
+            virtual_spaces: 0,
+        };
+        assert_eq!(ws.get_num_cursor_positions(), 3);
+        
+        let ws = Whitespace {
+            typed: vec!(Newline),
+            virtual_newlines: 0,
+            virtual_spaces: 0,
+        };
+        assert_eq!(ws.get_num_cursor_positions(), 2);
+    }
 
+    #[test]
+    fn test_num_cursor_positions_virtual_only() {
+        use WhitespaceChar::*;
+        let ws = Whitespace {
+            typed: vec!(),
+            virtual_newlines: 0,
+            virtual_spaces: 3,
+        };
+        assert_eq!(ws.get_num_cursor_positions(), 1);
+        
+        let ws = Whitespace {
+            typed: vec!(),
+            virtual_newlines: 2,
+            virtual_spaces: 10,
+        };
+        assert_eq!(ws.get_num_cursor_positions(), 3);
+    }
+
+    #[test]
+    fn test_num_cursor_positions_mixed() {
+        use WhitespaceChar::*;
+        let ws = Whitespace {
+            typed: vec!(Space, Space),
+            virtual_newlines: 0,
+            virtual_spaces: 5,
+        };
+        assert_eq!(ws.get_num_cursor_positions(), 3);
+        
+        let ws = Whitespace {
+            typed: vec!(Space, Newline, Space),
+            virtual_newlines: 2,
+            virtual_spaces: 0,
+        };
+        assert_eq!(ws.get_num_cursor_positions(), 5);
+    }
 }
