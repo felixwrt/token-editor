@@ -174,7 +174,9 @@ impl Content {
 
         // last element selected
         let virtual_spaces = self.elmts[self.cursor.0].whitespace.virtual_spaces;
-        if self.cursor.1 == self.elmts[self.cursor.0].whitespace.get_num_cursor_positions() - 1 && virtual_spaces > col {
+        let virtual_newlines = self.elmts[self.cursor.0].whitespace.virtual_newlines;
+        let num_typed_newlines = typed.iter().filter(|x| x.is_newline()).count();
+        if self.cursor.1 == self.elmts[self.cursor.0].whitespace.get_num_cursor_positions() - 1 && virtual_spaces > col && num_typed_newlines <= virtual_newlines {
             between = ((virtual_spaces - col) % 2) > 0;
             col += (virtual_spaces - col) / 2;
         }

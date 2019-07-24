@@ -28,8 +28,8 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        //let typed = "fn test(&self,  other:\n  \n&mut usize){let x=(self+1)*other;\n return1<y}";
-        let typed = "fn test(&self, other:&mut usize){let x=(self+1)*other;return1<y}";
+        let typed = "fn test(&self,  other:\n  \n&mut usize){let x=(self+1)*other;\n return1<y}";
+        //let typed = "fn test(&self, other:&mut usize){let x=(self+1)*other;return1<y}";
         let visible = "fn test(&self, other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
         let content = Content::from_strings(&typed, &visible);
         
