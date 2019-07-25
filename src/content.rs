@@ -114,7 +114,7 @@ impl Content {
                         '\n' => {virtual_newlines += 1; virtual_spaces = 0;},
                         ' ' => {virtual_spaces += 1;},
                         x if x == c => break,
-                        _ => panic!("this shouldn't happen!")
+                        x => println!("Ignoring character {:?}.", x)
                     }
                 }
                 
@@ -201,6 +201,32 @@ impl Content {
             self.cursor = (self.cursor.0 + 1, 0);
         }
         // fixme: selection of final whitespace!
+    }
+
+    pub fn insert(&mut self, c: char) {
+        // check for whitespace
+        if c == '\n' || c == ' ' {
+            let typed_len = self.elmts[self.cursor.0].whitespace.typed.len();
+            let ws_char = if c == '\n' { WhitespaceChar::Newline } else { WhitespaceChar::Space };
+            self.elmts[self.cursor.0].whitespace.typed.insert(std::cmp::min(self.cursor.1, typed_len), ws_char);
+            self.cursor.1 += 1;
+            return;
+        }
+
+        let mut ws_left = self.elmts[self.cursor.0].whitespace.typed.clone();
+        let ws_left_len = ws_left.len();
+        let ws_right = ws_left.split_off(std::cmp::min(self.cursor.1, ws_left_len));
+        let new_elmt = Elmt {
+            character: c,
+            whitespace: Whitespace {
+                typed: ws_left,
+                virtual_newlines: 0,
+                virtual_spaces: 0,
+            }
+        };
+        self.elmts[self.cursor.0].whitespace.typed = ws_right;
+        self.elmts.insert(self.cursor.0, new_elmt);
+        self.cursor = (self.cursor.0 + 1, 0);
     }
 }
 

@@ -76,7 +76,15 @@ impl Component for Model {
                         //let req = self.view_model.backspace();
                         //self.ws.as_mut().unwrap().send(Json(&req));
                     },
+                    "Enter" => {
+                        self.content.insert('\n');
+                        self.cursor = self.content.cursor_pos();
+                        self.text = self.content.get_string();
+                    },
                     x if x.len() == 1 => {
+                        self.content.insert(x.chars().next().unwrap());
+                        self.cursor = self.content.cursor_pos();
+                        self.text = self.content.get_string();
                         //self.console.log(&format!("{:?}", self.view_model.to_model_pos(true)));
                         //let req = self.view_model.insert(x.to_string());
                         //self.ws.as_mut().unwrap().send(Json(&req));
