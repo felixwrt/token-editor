@@ -256,6 +256,15 @@ impl Content {
         }
 
     }
+
+    pub fn clear_virtual_whitespace(&mut self) {
+        for e in &mut self.elmts {
+            e.whitespace.virtual_newlines = 0;
+            e.whitespace.virtual_spaces = 0;
+        }
+        self.final_whitespace.virtual_newlines = 0;
+        self.final_whitespace.virtual_spaces = 0;
+    }
 }
 
 impl Whitespace {

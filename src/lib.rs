@@ -21,6 +21,7 @@ pub enum Msg {
     GotInput(String),
     KeyEvt(KeyDownEvent),
     Ignore,
+    ClearVirtualWhitespace
 }
 
 impl Component for Model {
@@ -101,6 +102,11 @@ impl Component for Model {
             Msg::GotInput(s) => {
                 //self.input = s;
             },
+            Msg::ClearVirtualWhitespace => {
+                self.content.clear_virtual_whitespace();
+                self.cursor = self.content.cursor_pos();
+                self.text = self.content.get_string();
+            },
             Msg::Ignore => {
                 return false;
             }
@@ -117,12 +123,9 @@ impl Renderable<Model> for Model {
         let s = format!("background-color: grey; position: absolute; width: 2px; height: 19px; top: {}px; left: {}px;", y, x-1.0);
         html! {
             <div  >
-                /*<nav class="menu",>
-                    <button disabled=self.ws.is_some(),
-                            onclick=|_| WsAction::Connect.into(),>{ "Connect To WebSocket" }</button>
-                    <button disabled=self.ws.is_none(),
-                            onclick=|_| WsAction::Disconnect.into(),>{ "Close WebSocket connection" }</button>
-                </nav>*/
+                <nav class="menu",>
+                    <button onclick=|_| Msg::ClearVirtualWhitespace,>{ "Clear virtual whitespace" }</button>
+                </nav>
                 /*<textarea rows=5, style="width: 100%", 
                     oninput=|e| WsAction::SendData(e.value).into(),
                     placeholder="placeholder",>
