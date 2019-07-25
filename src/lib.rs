@@ -15,7 +15,8 @@ pub struct Model {
     cycle: Vec<CursorPos>,
     cycle_id: usize,
     content: Content,
-    auto_update: bool
+    auto_update: bool,
+    window_width: usize
 }
 
 pub enum Msg {
@@ -24,7 +25,8 @@ pub enum Msg {
     Ignore,
     ClearVirtualWhitespace,
     Format,
-    ToggleAutoUpdate
+    ToggleAutoUpdate,
+    UpdateWidth(usize)
 }
 
 impl Component for Model {
@@ -33,9 +35,9 @@ impl Component for Model {
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
         //let typed = "fn test(&self,  other:\n  \n&mut usize){let x=(self+1)*other;\n return1<y}";
-        let typed = "fn test(&self, other:&mut usize){let x=(self+1)*other;return 1<y}";
-        let visible = "fn test(&self, other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
-        let content = Content::from_strings(&typed, &visible);
+        let typed = "fn test(other:&mut usize){let array=[1123456, 531432124, 43241432, 4312432, 9432, 432,4328,432];let x=(self+1)*other;return 1<y}";
+        let visible = "fn test(other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
+        let content = Content::from_strings(&typed, &typed);
         
         let input = "fn   test(){println!(\"x\");}";
         let exp = "stdin:\n\nfn test() {\n    println!(\"x\");\n}\n";
@@ -63,7 +65,8 @@ impl Component for Model {
             ),
             cycle_id: 0,
             content,
-            auto_update: false
+            auto_update: false,
+            window_width: 100
         }
     }
 
@@ -88,7 +91,7 @@ impl Component for Model {
                     "Backspace" => {
                         self.content.backspace();
                         if self.auto_update {
-                            let res = self.content.update_virtual_whitespace();
+                            let res = self.content.update_virtual_whitespace(self.window_width);
                             self.console.log(&res);
                         }
                         self.cursor = self.content.cursor_pos();
@@ -100,7 +103,7 @@ impl Component for Model {
                     "Enter" => {
                         self.content.insert('\n');
                         if self.auto_update {
-                            let res = self.content.update_virtual_whitespace();
+                            let res = self.content.update_virtual_whitespace(self.window_width);
                             self.console.log(&res);
                         }
                         self.cursor = self.content.cursor_pos();
@@ -109,7 +112,7 @@ impl Component for Model {
                     x if x.len() == 1 => {
                         self.content.insert(x.chars().next().unwrap());
                         if self.auto_update {
-                            let res = self.content.update_virtual_whitespace();
+                            let res = self.content.update_virtual_whitespace(self.window_width);
                             self.console.log(&res);
                         }
                         self.cursor = self.content.cursor_pos();
@@ -133,7 +136,7 @@ impl Component for Model {
                 self.text = self.content.get_string();
             },
             Msg::Format => {
-                let res = self.content.update_virtual_whitespace();
+                let res = self.content.update_virtual_whitespace(self.window_width);
                 self.console.log(&res);
                 self.cursor = self.content.cursor_pos();
                 self.text = self.content.get_string();
@@ -143,6 +146,13 @@ impl Component for Model {
             },
             Msg::ToggleAutoUpdate => {
                 self.auto_update = !self.auto_update;
+            },
+            Msg::UpdateWidth(n) => {
+                self.window_width = n;
+                let res = self.content.update_virtual_whitespace(self.window_width);
+                self.console.log(&res);
+                self.cursor = self.content.cursor_pos();
+                self.text = self.content.get_string();
             }
         }
         true
@@ -161,6 +171,7 @@ impl Renderable<Model> for Model {
                     <button onclick=|_| Msg::ClearVirtualWhitespace,>{ "Clear virtual whitespace" }</button>
                     <button onclick=|_| Msg::Format,>{ "Update virtual whitespace" }</button>
                     <button onclick=|_| Msg::ToggleAutoUpdate,>{ if self.auto_update {"Auto update ON"} else {"Auto update OFF"} }</button>
+                    <input oninput=|e| Msg::UpdateWidth(e.value.parse().unwrap()), type="range", min="40", max="150", value="100", class="slider", style="width:500px", />
                 </nav>
                 /*<textarea rows=5, style="width: 100%", 
                     oninput=|e| WsAction::SendData(e.value).into(),
@@ -175,9 +186,10 @@ impl Renderable<Model> for Model {
                     <div style="font-family: monospace; position: relative; font-size: 12pt;", >
                         <pre>{ self.text.clone() }</pre>
                         <div id="cursor", style=s, ></div>
+                        <pre>{ format!("{}|", " ".repeat(self.window_width)) }</pre>
                     </div>
                 </div>
-                <span style="font-family: monospace; position: relative; font-size: 12pt;", > {"x"} </span>
+                <span style="font-family: monospace; position: relative; font-size: 12pt;", > { self.window_width } </span>
                 //{ format!("{:?}", self.view_model.pos) }
             </div>
         }

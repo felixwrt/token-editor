@@ -266,14 +266,14 @@ impl Content {
         self.final_whitespace.virtual_spaces = 0;
     }
 
-    pub fn update_virtual_whitespace(&mut self) -> String {
+    pub fn update_virtual_whitespace(&mut self, window_width: usize) -> String {
         // get string (without virtual whitespace)
         let mut clone = self.clone();
         clone.clear_virtual_whitespace();
         let s = clone.get_string();
 
         // pass that string to rustfmt
-        match prettify_code(s.clone()) {
+        match prettify_code(s.clone(), window_width) {
             Some(res) => {
                 let c = Content::from_strings(&s, &res);
                 self.elmts = c.elmts;
@@ -300,12 +300,13 @@ impl Whitespace {
     }
 }
 
-pub fn prettify_code(input: String) -> Option<String> {
+pub fn prettify_code(input: String, window_width: usize) -> Option<String> {
     let mut buf = Vec::new();
     {
         let mut config = rustfmt_nightly::Config::default();
         config.set().emit_mode(rustfmt_nightly::EmitMode::Stdout);
         config.set().edition(rustfmt_nightly::Edition::Edition2018);
+        config.set().max_width(window_width);
         let mut session = rustfmt_nightly::Session::new(config, Some(&mut buf));
         session.format(rustfmt_nightly::Input::Text(input)).unwrap();
         if !session.has_no_errors() {
