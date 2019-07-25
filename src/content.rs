@@ -228,6 +228,34 @@ impl Content {
         self.elmts.insert(self.cursor.0, new_elmt);
         self.cursor = (self.cursor.0 + 1, 0);
     }
+
+    pub fn backspace(&mut self) {
+        if self.cursor.1 > 0 {
+            if !self.elmts[self.cursor.0].whitespace.typed.is_empty() {
+                self.elmts[self.cursor.0].whitespace.typed.pop();
+            }
+            self.cursor.1 -= 1;
+        } else if self.cursor.0 > 0 {
+            let ws_left = &self.elmts[self.cursor.0 - 1].whitespace;
+            let ws_right = &self.elmts[self.cursor.0].whitespace;
+            let mut typed_new = ws_left.typed.clone();
+            typed_new.extend(ws_right.typed.clone());
+            let ws_new = Whitespace {
+                typed: typed_new,
+                virtual_newlines: ws_left.virtual_newlines + ws_right.virtual_newlines,
+                virtual_spaces: if ws_right.virtual_newlines == 0 { 
+                    ws_left.virtual_spaces + ws_right.virtual_spaces 
+                } else {
+                    ws_right.virtual_spaces
+                },
+            };
+            self.elmts[self.cursor.0].whitespace = ws_new;
+            let cursor_new = (self.cursor.0 - 1, self.elmts[self.cursor.0 - 1].whitespace.get_num_cursor_positions() - 1);
+            self.elmts.remove(self.cursor.0 - 1);
+            self.cursor = cursor_new;
+        }
+
+    }
 }
 
 impl Whitespace {

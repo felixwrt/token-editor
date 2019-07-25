@@ -72,6 +72,9 @@ impl Component for Model {
                         self.cursor = self.content.cursor_pos();
                     },
                     "Backspace" => {
+                        self.content.backspace();
+                        self.cursor = self.content.cursor_pos();
+                        self.text = self.content.get_string();
                         //self.console.log(&format!("{:?}", self.view_model.to_model_pos(false)));
                         //let req = self.view_model.backspace();
                         //self.ws.as_mut().unwrap().send(Json(&req));
