@@ -265,6 +265,28 @@ impl Content {
         self.final_whitespace.virtual_newlines = 0;
         self.final_whitespace.virtual_spaces = 0;
     }
+
+    pub fn update_virtual_whitespace(&mut self) -> String {
+        // get string (without virtual whitespace)
+        let mut clone = self.clone();
+        clone.clear_virtual_whitespace();
+        let s = clone.get_string();
+
+        // pass that string to rustfmt
+        match prettify_code(s.clone()) {
+            Some(res) => {
+                let c = Content::from_strings(&s, &res);
+                self.elmts = c.elmts;
+                self.cursor.1 = std::cmp::min(self.cursor.1, self.elmts[self.cursor.0].whitespace.get_num_cursor_positions()-1);
+                self.final_whitespace = c.final_whitespace;
+                res
+            },
+            None => "error".to_string()
+        }
+        // parse the result
+
+        // update virtual whitespace
+    }
 }
 
 impl Whitespace {
@@ -276,6 +298,21 @@ impl Whitespace {
         
         self.typed.len() + 1 + add_newlines
     }
+}
+
+pub fn prettify_code(input: String) -> Option<String> {
+    let mut buf = Vec::new();
+    {
+        let mut config = rustfmt_nightly::Config::default();
+        config.set().emit_mode(rustfmt_nightly::EmitMode::Stdout);
+        config.set().edition(rustfmt_nightly::Edition::Edition2018);
+        let mut session = rustfmt_nightly::Session::new(config, Some(&mut buf));
+        session.format(rustfmt_nightly::Input::Text(input)).unwrap();
+        if !session.has_no_errors() {
+            return None
+        }
+    }
+    Some(String::from_utf8(buf[8..].to_vec()).unwrap())
 }
 
 #[cfg(test)]

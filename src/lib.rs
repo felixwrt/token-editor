@@ -5,7 +5,7 @@ use stdweb::web::event::IKeyboardEvent;
 use stdweb::web::event::IEvent;
 
 mod content;
-use content::{Content, CursorPos, GetString};
+use content::{Content, CursorPos, GetString, prettify_code};
 
 pub struct Model {
     console: ConsoleService,
@@ -15,13 +15,16 @@ pub struct Model {
     cycle: Vec<CursorPos>,
     cycle_id: usize,
     content: Content,
+    auto_update: bool
 }
 
 pub enum Msg {
     GotInput(String),
     KeyEvt(KeyDownEvent),
     Ignore,
-    ClearVirtualWhitespace
+    ClearVirtualWhitespace,
+    Format,
+    ToggleAutoUpdate
 }
 
 impl Component for Model {
@@ -29,13 +32,22 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let typed = "fn test(&self,  other:\n  \n&mut usize){let x=(self+1)*other;\n return1<y}";
-        //let typed = "fn test(&self, other:&mut usize){let x=(self+1)*other;return1<y}";
+        //let typed = "fn test(&self,  other:\n  \n&mut usize){let x=(self+1)*other;\n return1<y}";
+        let typed = "fn test(&self, other:&mut usize){let x=(self+1)*other;return 1<y}";
         let visible = "fn test(&self, other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
         let content = Content::from_strings(&typed, &visible);
         
+        let input = "fn   test(){println!(\"x\");}";
+        let exp = "stdin:\n\nfn test() {\n    println!(\"x\");\n}\n";
+        
+        let mut console = ConsoleService::new();
+        
+        //console.log(&prettify_code(input.to_string()));
+        //console.log(&prettify_code(input.to_string()));
+        //console.log(&prettify_code(input.to_string()));
+
         Model {
-            console: ConsoleService::new(),
+            console,
             link,
             text: content.get_string(), //"fn test() {\n    println!(\"hello\")\n}".to_string(),
             cursor: content.cursor_pos(), //CursorPos { line: 0, col: 9, between: true },
@@ -50,7 +62,8 @@ impl Component for Model {
                 CursorPos { line: 1, col: 21, between: false },
             ),
             cycle_id: 0,
-            content
+            content,
+            auto_update: false
         }
     }
 
@@ -74,6 +87,10 @@ impl Component for Model {
                     },
                     "Backspace" => {
                         self.content.backspace();
+                        if self.auto_update {
+                            let res = self.content.update_virtual_whitespace();
+                            self.console.log(&res);
+                        }
                         self.cursor = self.content.cursor_pos();
                         self.text = self.content.get_string();
                         //self.console.log(&format!("{:?}", self.view_model.to_model_pos(false)));
@@ -82,11 +99,19 @@ impl Component for Model {
                     },
                     "Enter" => {
                         self.content.insert('\n');
+                        if self.auto_update {
+                            let res = self.content.update_virtual_whitespace();
+                            self.console.log(&res);
+                        }
                         self.cursor = self.content.cursor_pos();
                         self.text = self.content.get_string();
                     },
                     x if x.len() == 1 => {
                         self.content.insert(x.chars().next().unwrap());
+                        if self.auto_update {
+                            let res = self.content.update_virtual_whitespace();
+                            self.console.log(&res);
+                        }
                         self.cursor = self.content.cursor_pos();
                         self.text = self.content.get_string();
                         //self.console.log(&format!("{:?}", self.view_model.to_model_pos(true)));
@@ -107,8 +132,17 @@ impl Component for Model {
                 self.cursor = self.content.cursor_pos();
                 self.text = self.content.get_string();
             },
+            Msg::Format => {
+                let res = self.content.update_virtual_whitespace();
+                self.console.log(&res);
+                self.cursor = self.content.cursor_pos();
+                self.text = self.content.get_string();
+            },
             Msg::Ignore => {
                 return false;
+            },
+            Msg::ToggleAutoUpdate => {
+                self.auto_update = !self.auto_update;
             }
         }
         true
@@ -125,6 +159,8 @@ impl Renderable<Model> for Model {
             <div  >
                 <nav class="menu",>
                     <button onclick=|_| Msg::ClearVirtualWhitespace,>{ "Clear virtual whitespace" }</button>
+                    <button onclick=|_| Msg::Format,>{ "Update virtual whitespace" }</button>
+                    <button onclick=|_| Msg::ToggleAutoUpdate,>{ if self.auto_update {"Auto update ON"} else {"Auto update OFF"} }</button>
                 </nav>
                 /*<textarea rows=5, style="width: 100%", 
                     oninput=|e| WsAction::SendData(e.value).into(),

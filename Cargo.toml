@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 stdweb = "0.4.15"
 yew = "0.6.0"
+rustfmt-nightly = { path = "./rustfmt" }
