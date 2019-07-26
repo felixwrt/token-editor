@@ -52,6 +52,7 @@ pub trait GetString {
 
 impl GetString for WhitespaceChar {
     fn get_string(&self) -> String {
+        // visible whitespace characters · ¶
         match self {
             WhitespaceChar::Space => " ".to_string(),
             WhitespaceChar::Newline => "\n".to_string(),
@@ -152,7 +153,7 @@ impl Content {
     }
 
     pub fn cursor_pos(&self) -> CursorPos {
-        let mut s: String = self.elmts.iter().take(self.cursor.0).map(|x| x.get_string()).collect();
+        let s: String = self.elmts.iter().take(self.cursor.0).map(|x| x.get_string()).collect();
         let mut line = s.chars().filter(|x| x == &'\n').count();
         let mut col = 0;
         let mut init_col = s.chars().rev().take_while(|x| x != &'\n').count();
@@ -275,7 +276,9 @@ impl Content {
         // pass that string to rustfmt
         match prettify_code(s.clone(), window_width) {
             Some(res) => {
+                // parse the result
                 let c = Content::from_strings(&s, &res);
+                // update virtual whitespace
                 self.elmts = c.elmts;
                 self.cursor.1 = std::cmp::min(self.cursor.1, self.elmts[self.cursor.0].whitespace.get_num_cursor_positions()-1);
                 self.final_whitespace = c.final_whitespace;
@@ -283,9 +286,6 @@ impl Content {
             },
             None => "error".to_string()
         }
-        // parse the result
-
-        // update virtual whitespace
     }
 }
 
@@ -341,7 +341,6 @@ mod tests {
 
     #[test]
     fn test_num_cursor_positions() {
-        use WhitespaceChar::*;
         let ws = Whitespace {
             typed: vec!(),
             virtual_newlines: 0,
@@ -369,7 +368,6 @@ mod tests {
 
     #[test]
     fn test_num_cursor_positions_virtual_only() {
-        use WhitespaceChar::*;
         let ws = Whitespace {
             typed: vec!(),
             virtual_newlines: 0,
