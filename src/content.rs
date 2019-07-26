@@ -6,7 +6,6 @@ pub struct Content {
     elmts: Vec<Elmt>,
     cursor: (usize, usize),  // first element is the index of the selected whitespace element.
                              // the sectond element is the selection index within that whitespace element
-    final_whitespace: Whitespace
 }
 
 #[derive(Clone, Debug)]
@@ -80,16 +79,16 @@ impl GetString for Whitespace {
 impl GetString for Elmt {
     fn get_string(&self) -> String {
         let mut s = self.whitespace.get_string();
-        s.push(self.character);
+        if self.character != '\0' {
+            s.push(self.character);
+        }
         s
     }
 }
 
 impl GetString for Content {
     fn get_string(&self) -> String {
-        let mut s: String = self.elmts.iter().map(|x| x.get_string()).collect();
-        s.push_str(&self.final_whitespace.get_string());
-        s
+        self.elmts.iter().map(|x| x.get_string()).collect()
     }
 }
 
@@ -141,14 +140,19 @@ impl Content {
             }
         }
 
-        Content {
-            elmts,
-            cursor: (0, 0),
-            final_whitespace: Whitespace {
+        // final element
+        elmts.push(Elmt{
+            character: '\0',
+            whitespace: Whitespace {
                 typed: current_whitespace,
                 virtual_newlines,
                 virtual_spaces
             }
+        });
+
+        Content {
+            elmts,
+            cursor: (0, 0),
         }
     }
 
@@ -263,8 +267,6 @@ impl Content {
             e.whitespace.virtual_newlines = 0;
             e.whitespace.virtual_spaces = 0;
         }
-        self.final_whitespace.virtual_newlines = 0;
-        self.final_whitespace.virtual_spaces = 0;
     }
 
     pub fn update_virtual_whitespace(&mut self, window_width: usize) -> String {
@@ -281,7 +283,6 @@ impl Content {
                 // update virtual whitespace
                 self.elmts = c.elmts;
                 self.cursor.1 = std::cmp::min(self.cursor.1, self.elmts[self.cursor.0].whitespace.get_num_cursor_positions()-1);
-                self.final_whitespace = c.final_whitespace;
                 res
             },
             None => "error".to_string()
