@@ -95,68 +95,71 @@ impl GetString for Content {
 
 
 impl Content {
-    pub fn from_strings(typed: &str, visible: &str) -> Content {
-        let mut chars = typed.chars();
-        let mut visible_chars = visible.chars().peekable();
+    pub fn from_string(input: &str) -> Content {
+        let mut chars = input.chars();
         let mut elmts = vec!();
         let mut current_whitespace = vec!();
-        
+
         while let Some(c) = chars.next() {
-            if c == ' ' {
-                current_whitespace.push(WhitespaceChar::Space);
-            } else if c == '\n' {
-                current_whitespace.push(WhitespaceChar::Newline);
-            } else {
-                let mut virtual_newlines = 0;
-                let mut virtual_spaces = 0;
-                while let Some(vc) = visible_chars.peek() {
-                    match vc {
-                        '\n' => { virtual_newlines += 1; virtual_spaces = 0; visible_chars.next(); },
-                        ' ' => { virtual_spaces += 1; visible_chars.next(); },
-                        x if x == &c => { visible_chars.next(); break; },
-                        ',' => { println!("Ignoring comma"); visible_chars.next(); },
-                        _ => {
-                            break;
+            match c {
+                ' ' => current_whitespace.push(WhitespaceChar::Space),
+                '\n' => current_whitespace.push(WhitespaceChar::Newline),
+                other => {
+                    elmts.push(Elmt {
+                        character: other,
+                        whitespace: Whitespace {
+                            typed: current_whitespace,
+                            virtual_newlines: 0,
+                            virtual_spaces: 0,
                         }
-                    }
+                    });
+                    current_whitespace = vec!();
                 }
-                
-                elmts.push(Elmt{
-                    character: c,
-                    whitespace: Whitespace {
-                        typed: current_whitespace.clone(),
-                        virtual_newlines,
-                        virtual_spaces
-                    }
-                });
-                current_whitespace = vec!();
             }
         }
 
-        let mut virtual_newlines = 0;
-        let mut virtual_spaces = 0;
-        while let Some(vc) = visible_chars.next() {
-            match vc {
-                '\n' => {virtual_newlines += 1; virtual_spaces = 0;},
-                ' ' => {virtual_spaces += 1;},
-                _ => panic!("this shouldn't happen!")
-            }
-        }
-
-        // final element
-        elmts.push(Elmt{
+        elmts.push(Elmt {
             character: '\0',
             whitespace: Whitespace {
                 typed: current_whitespace,
-                virtual_newlines,
-                virtual_spaces
+                virtual_newlines: 0,
+                virtual_spaces: 0,
             }
         });
 
         Content {
-            elmts,
-            cursor: (0, 0),
+            elmts: elmts,
+            cursor: (0, 0)
         }
+    }
+
+    pub fn update_virtual_whitespace_2(&mut self, formatted_input: &str) {
+        let mut chars = formatted_input.chars().peekable();
+        
+        for elmt in &mut self.elmts {
+            let mut virtual_newlines = 0;
+            let mut virtual_spaces = 0;
+            while let Some(vc) = chars.peek() {
+                match vc {
+                    '\n' => { virtual_newlines += 1; virtual_spaces = 0; chars.next(); },
+                    ' ' => { virtual_spaces += 1; chars.next(); },
+                    x if x == &elmt.character => { chars.next(); break; },
+                    ',' => { println!("Ignoring comma"); chars.next(); },
+                    _ => {
+                        break;
+                    }
+                }
+            }
+            
+            elmt.whitespace.virtual_newlines = virtual_newlines;
+            elmt.whitespace.virtual_spaces = virtual_spaces;
+        }
+    }
+
+    pub fn from_strings(typed: &str, visible: &str) -> Content {
+        let mut content = Content::from_string(typed);
+        content.update_virtual_whitespace_2(visible);
+        content
     }
 
     pub fn cursor_pos(&self) -> CursorPos {
@@ -281,11 +284,11 @@ impl Content {
         // pass that string to rustfmt
         match prettify_code(s.clone(), window_width) {
             Some(res) => {
-                // parse the result
-                let c = Content::from_strings(&s, &res);
-                // update virtual whitespace
-                self.elmts = c.elmts;
-                self.cursor.1 = std::cmp::min(self.cursor.1, self.elmts[self.cursor.0].whitespace.get_num_cursor_positions()-1);
+                self.update_virtual_whitespace_2(&res);
+                self.cursor.1 = std::cmp::min(
+                    self.cursor.1, 
+                    self.elmts[self.cursor.0].whitespace.get_num_cursor_positions() - 1
+                );
                 res
             },
             None => "error".to_string()
