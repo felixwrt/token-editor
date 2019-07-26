@@ -97,7 +97,7 @@ impl GetString for Content {
 impl Content {
     pub fn from_strings(typed: &str, visible: &str) -> Content {
         let mut chars = typed.chars();
-        let mut visible_chars = visible.chars();
+        let mut visible_chars = visible.chars().peekable();
         let mut elmts = vec!();
         let mut current_whitespace = vec!();
         
@@ -109,12 +109,15 @@ impl Content {
             } else {
                 let mut virtual_newlines = 0;
                 let mut virtual_spaces = 0;
-                while let Some(vc) = visible_chars.next() {
+                while let Some(vc) = visible_chars.peek() {
                     match vc {
-                        '\n' => {virtual_newlines += 1; virtual_spaces = 0;},
-                        ' ' => {virtual_spaces += 1;},
-                        x if x == c => break,
-                        x => println!("Ignoring character {:?}.", x)
+                        '\n' => { virtual_newlines += 1; virtual_spaces = 0; visible_chars.next(); },
+                        ' ' => { virtual_spaces += 1; visible_chars.next(); },
+                        x if x == &c => { visible_chars.next(); break; },
+                        ',' => { println!("Ignoring comma"); visible_chars.next(); },
+                        _ => {
+                            break;
+                        }
                     }
                 }
                 
@@ -335,6 +338,26 @@ mod tests {
         let typed = "fn test(&self,  other:\n  \n&mut usize){let x=(self+1)*other;\n return1<y}";
         let visible = "fn test(&self, other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
         let out = "fn test(&self,  other:\n  \n&mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
+        let c = Content::from_strings(&typed, &visible);
+        let s = c.get_string();
+        assert_eq!(&s, out);
+    }
+
+    #[test]
+    fn test_visible_contains_extra_comma() {
+        let typed = "let x = [a,b,c]";
+        let visible = "let x = [a, b, c, ]";
+        let out = "let x = [a, b, c ]";
+        let c = Content::from_strings(&typed, &visible);
+        let s = c.get_string();
+        assert_eq!(&s, out);
+    }
+    
+    #[test]
+    fn test_visible_doesnt_contain_comma() {
+        let typed = "let x = [a,b,c,];let y = 15;";
+        let visible = "let x = [a, b, c];let y = 15;";
+        let out = "let x = [a, b, c,];let y = 15;";
         let c = Content::from_strings(&typed, &visible);
         let s = c.get_string();
         assert_eq!(&s, out);
