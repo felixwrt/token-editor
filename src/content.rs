@@ -242,8 +242,8 @@ impl Content {
 
     pub fn backspace(&mut self) {
         if self.cursor.1 > 0 {
-            if !self.elmts[self.cursor.0].whitespace.typed.is_empty() {
-                self.elmts[self.cursor.0].whitespace.typed.pop();
+            if self.cursor.1 <= self.elmts[self.cursor.0].whitespace.typed.len() {
+                self.elmts[self.cursor.0].whitespace.typed.remove(self.cursor.1 - 1);
             }
             self.cursor.1 -= 1;
         } else if self.cursor.0 > 0 {
@@ -265,7 +265,10 @@ impl Content {
             self.elmts.remove(self.cursor.0 - 1);
             self.cursor = cursor_new;
         }
+    }
 
+    pub fn delete(&mut self) {
+        unimplemented!();
     }
 
     pub fn clear_virtual_whitespace(&mut self) {
@@ -427,4 +430,49 @@ mod tests {
         };
         assert_eq!(ws.get_num_cursor_positions(), 5);
     }
+
+    #[test]
+    fn test_backspace() {
+        let mut content = Content::from_string("a \n  def");
+        content.cursor_right();
+        content.cursor_right();
+        content.backspace();
+        assert_eq!(&content.get_string(), "a\n  def");
+    }
+
+    #[test]
+    fn test_delete_typed_whitespace() {
+        let mut content = Content::from_string("a\n\n def");
+        content.cursor_right();
+        content.delete();
+        assert_eq!(&content.get_string(), "a\n def");
+        content.delete();
+        assert_eq!(&content.get_string(), "a def");
+        content.delete();
+        assert_eq!(&content.get_string(), "adef");
+    }
+
+    #[test]
+    fn test_delete_character(){
+        let mut content = Content::from_string(" adef");
+        content.cursor_right();
+        content.delete();
+        assert_eq!(&content.get_string(), " def");
+        content.cursor_right();
+        content.delete();
+        assert_eq!(&content.get_string(), " df");
+    }
+
+    #[test]
+    fn test_delete_virtual_whitespace(){
+        let mut content = Content::from_string("a5");
+        content.update_virtual_whitespace_2("a\n  5");
+        content.cursor_right();
+        content.delete();  // moves to next line
+        assert_eq!(&content.get_string(), "a\n  5");
+        content.delete();  // deletes "5"
+        assert_eq!(&content.get_string(), "a\n  ");
+    }
+
+    
 }
