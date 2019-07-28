@@ -163,7 +163,6 @@ impl Content {
         let s: String = self.elmts.iter().take(self.cursor.0).map(|x| x.get_string()).collect();
         let mut line = s.chars().filter(|x| x == &'\n').count();
         let mut col = s.chars().rev().take_while(|x| x != &'\n').count();
-        let mut between = false;
         
         let virtual_spaces = self.elmts[self.cursor.0].whitespace.virtual_spaces;
         let virtual_newlines = self.elmts[self.cursor.0].whitespace.virtual_newlines;
@@ -433,7 +432,6 @@ impl Content {
 
 impl Whitespace {
     fn get_num_cursor_positions(&self) -> usize {
-        let num_typed_newlines = self.typed.iter().filter(|x| x.is_newline()).count();
         self.typed.len() + 1
     }
 }
@@ -452,27 +450,6 @@ pub fn prettify_code(input: String, window_width: usize) -> Option<String> {
         }
     }
     Some(String::from_utf8(buf[8..].to_vec()).unwrap())
-}
-
-pub fn prettify_text(input: String, window_width:usize) -> Option<String> {
-    let mut s = String::new();
-    let mut width = 0;
-    for word in input.split_whitespace(){
-        if width + word.len() <= window_width {
-            width += word.len() + 1;
-            s.push_str(word);
-            s.push(' ');
-        } else {
-            width = word.len() + 1;
-            s.push('\n');
-            s.push_str(word);
-            s.push(' ');
-        }
-    }
-    if !s.is_empty() {
-        s.pop();
-    }
-    Some(s)
 }
 
 #[cfg(test)]

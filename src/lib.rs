@@ -7,7 +7,7 @@ use stdweb::web::event::IEvent;
 mod content;
 use content::{Content, GetString};
 
-const text_size: usize = 12;
+const TEXT_SIZE: usize = 12;
 
 pub struct Model {
     console: ConsoleService,
@@ -54,10 +54,10 @@ impl Component for Model {
         use stdweb::web::INode;
         use stdweb::unstable::TryFrom;
         use stdweb::web::IHtmlElement;
-        let mut elmt = stdweb::web::document().create_element("span").unwrap();
+        let elmt = stdweb::web::document().create_element("span").unwrap();
         let text = stdweb::web::document().create_text_node("x");
         elmt.append_child(&text);
-        elmt.set_attribute("style", &format!("font-family: monospace; position: absolute; top: -1000px; left: -1000px; font-size: {}pt;", text_size));
+        elmt.set_attribute("style", &format!("font-family: monospace; position: absolute; top: -1000px; left: -1000px; font-size: {}pt;", TEXT_SIZE)).unwrap();
         stdweb::web::document().body().unwrap().append_child(&elmt);
         let rect = stdweb::web::HtmlElement::try_from(elmt).unwrap().get_bounding_client_rect();
         console.log(&format!("{}, {}", rect.get_width(), rect.get_height()));
@@ -198,7 +198,7 @@ impl Renderable<Model> for Model {
             (self.cursor2.1).1
         };
         let last_line_style = format!("top: {}px; left: 0px; width: {}px; height: {}px;", h*(self.cursor2.1).0 as f32, w * last_line_width as f32, h);
-        let div_style = format!("font-family: monospace; position: relative; font-size: {}pt;", text_size);
+        let div_style = format!("font-family: monospace; position: relative; font-size: {}pt;", TEXT_SIZE);
 
         html! {
             <div  >
