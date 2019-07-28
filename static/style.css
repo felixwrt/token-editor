@@ -1,3 +1,16 @@
 *:focus {
     outline: none;
 }
+
+.line {
+    position: absolute;
+    width: 2px;
+    height: 19px;
+    background-color: #557799;
+  }
+  
+  .area {
+    position: absolute;
+    height: 19px;
+    background-color: #bbddff;
+  }

@@ -27,12 +27,7 @@ pub enum WhitespaceChar {
     Newline
 }
 
-#[derive(Clone, Debug)]
-pub struct CursorPos {
-    pub line: usize,
-    pub col: usize,
-    pub between: bool,
-}
+type CursorPos = ((usize, usize), (usize, usize));
 
 
 impl WhitespaceChar {
@@ -189,16 +184,15 @@ impl Content {
         let num_typed_newlines = typed.iter().filter(|x| x.is_newline()).count();
         if self.cursor.1 == self.elmts[self.cursor.0].whitespace.get_num_cursor_positions() - 1 && virtual_spaces > col && num_typed_newlines <= virtual_newlines {
             if init_col == 0 {
-                col = virtual_spaces;
+                return ((line, init_col + col), (line, init_col + virtual_spaces));
             } else {
-                between = ((virtual_spaces - col) % 2) > 0;
-                col += (virtual_spaces - col) / 2;
+                return ((line, init_col + col), (line, init_col + virtual_spaces));
+                //between = ((virtual_spaces - col) % 2) > 0;
+                //col += (virtual_spaces - col) / 2;
             }
         }
 
-        CursorPos {
-            line, col: init_col + col, between
-        }
+        ((line, init_col + col), (line, init_col + col))
     }
 
     pub fn cursor_left(&mut self) {
@@ -328,6 +322,27 @@ pub fn prettify_code(input: String, window_width: usize) -> Option<String> {
         }
     }
     Some(String::from_utf8(buf[8..].to_vec()).unwrap())
+}
+
+pub fn prettify_text(input: String, window_width:usize) -> Option<String> {
+    let mut s = String::new();
+    let mut width = 0;
+    for word in input.split_whitespace(){
+        if width + word.len() <= window_width {
+            width += word.len() + 1;
+            s.push_str(word);
+            s.push(' ');
+        } else {
+            width = word.len() + 1;
+            s.push('\n');
+            s.push_str(word);
+            s.push(' ');
+        }
+    }
+    if !s.is_empty() {
+        s.pop();
+    }
+    Some(s)
 }
 
 #[cfg(test)]
