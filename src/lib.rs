@@ -95,6 +95,15 @@ impl Component for Model {
                         self.update_cursor();
                         self.text = self.content.get_string();
                     },
+                    "Delete" => {
+                        self.content.delete();
+                        if self.auto_update {
+                            let res = self.content.update_virtual_whitespace(self.window_width);
+                            self.console.log(&res);
+                        }
+                        self.update_cursor();
+                        self.text = self.content.get_string();
+                    },
                     "Enter" => {
                         self.content.insert('\n');
                         if self.auto_update {
