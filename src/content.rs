@@ -160,39 +160,29 @@ impl Content {
     pub fn cursor_pos(&self) -> CursorPos {
         let s: String = self.elmts.iter().take(self.cursor.0).map(|x| x.get_string()).collect();
         let mut line = s.chars().filter(|x| x == &'\n').count();
-        let mut col = 0;
-        let mut init_col = s.chars().rev().take_while(|x| x != &'\n').count();
+        let mut col = s.chars().rev().take_while(|x| x != &'\n').count();
         let mut between = false;
         
+        let virtual_spaces = self.elmts[self.cursor.0].whitespace.virtual_spaces;
+        let virtual_newlines = self.elmts[self.cursor.0].whitespace.virtual_newlines;
+        let virtual_end = (line + virtual_newlines, if virtual_newlines==0 {col} else {0} + virtual_spaces);
+
         let typed = &self.elmts[self.cursor.0].whitespace.typed;
         for wc in typed.iter().take(self.cursor.1) {
             match wc {
                 WhitespaceChar::Space => col += 1,
-                WhitespaceChar::Newline => {col = 0; line += 1; init_col = 0},
+                WhitespaceChar::Newline => {col = 0; line += 1;},
             }
         }
 
-        if self.cursor.1 > typed.len() {
-            init_col = 0;
-            col = 0;
-            line += self.cursor.1 - typed.len();
-        }
-
-        // last element selected
-        let virtual_spaces = self.elmts[self.cursor.0].whitespace.virtual_spaces;
-        let virtual_newlines = self.elmts[self.cursor.0].whitespace.virtual_newlines;
-        let num_typed_newlines = typed.iter().filter(|x| x.is_newline()).count();
-        if self.cursor.1 == self.elmts[self.cursor.0].whitespace.get_num_cursor_positions() - 1 && virtual_spaces > col && num_typed_newlines <= virtual_newlines {
-            if init_col == 0 {
-                return ((line, init_col + col), (line, init_col + virtual_spaces));
-            } else {
-                return ((line, init_col + col), (line, init_col + virtual_spaces));
-                //between = ((virtual_spaces - col) % 2) > 0;
-                //col += (virtual_spaces - col) / 2;
-            }
-        }
-
-        ((line, init_col + col), (line, init_col + col))
+        let start = (line, col);
+        let end = if self.cursor.1 == self.elmts[self.cursor.0].whitespace.get_num_cursor_positions() - 1 {
+            std::cmp::max(start, virtual_end)
+        } else {
+            start.clone()
+        };
+        
+        (start, end)
     }
 
     pub fn cursor_left(&mut self) {
@@ -209,7 +199,6 @@ impl Content {
         } else if self.cursor.0 < self.elmts.len() - 1 {
             self.cursor = (self.cursor.0 + 1, 0);
         }
-        // fixme: selection of final whitespace!
     }
 
     pub fn insert(&mut self, c: char) {
@@ -300,11 +289,7 @@ impl Content {
 impl Whitespace {
     fn get_num_cursor_positions(&self) -> usize {
         let num_typed_newlines = self.typed.iter().filter(|x| x.is_newline()).count();
-        let add_newlines = if num_typed_newlines < self.virtual_newlines {
-            self.virtual_newlines - num_typed_newlines
-        } else { 0 };
-        
-        self.typed.len() + 1 + add_newlines
+        self.typed.len() + 1
     }
 }
 
