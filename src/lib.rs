@@ -7,6 +7,8 @@ use stdweb::web::event::IEvent;
 mod content;
 use content::{Content, GetString};
 
+const text_size: usize = 12;
+
 pub struct Model {
     console: ConsoleService,
     text: String,
@@ -15,7 +17,8 @@ pub struct Model {
     cursor_small: (usize, usize),
     content: Content,
     auto_update: bool,
-    window_width: usize
+    window_width: usize,
+    char_dimensions: (f32, f32)
 }
 
 pub enum Msg {
@@ -44,15 +47,32 @@ impl Component for Model {
         let _visible = "fn test(other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
         let typed = "fn test() {\n\n    let x = 1;\n}";
         let content = Content::from_strings(&typed, &typed);
+
+        let mut console = ConsoleService::new();
+
+        use stdweb::web::IElement;
+        use stdweb::web::INode;
+        use stdweb::unstable::TryFrom;
+        use stdweb::web::IHtmlElement;
+        let mut elmt = stdweb::web::document().create_element("span").unwrap();
+        let text = stdweb::web::document().create_text_node("x");
+        elmt.append_child(&text);
+        elmt.set_attribute("style", &format!("font-family: monospace; position: absolute; top: -1000px; left: -1000px; font-size: {}pt;", text_size));
+        stdweb::web::document().body().unwrap().append_child(&elmt);
+        let rect = stdweb::web::HtmlElement::try_from(elmt).unwrap().get_bounding_client_rect();
+        console.log(&format!("{}, {}", rect.get_width(), rect.get_height()));
+
+
         Model {
-            console: ConsoleService::new(),
+            console: console,
             text: content.get_string(),
             //cursor: content.cursor_pos(),
             cursor2: ((0, 11), (2, 4)),
             cursor_small: (0, 0),
             content,
             auto_update: false,
-            window_width: 100
+            window_width: 100,
+            char_dimensions: (rect.get_width() as f32, rect.get_height() as f32)
         }
     }
 
@@ -156,28 +176,30 @@ impl Component for Model {
 
 impl Renderable<Model> for Model {
     fn view(&self) -> Html<Self> {
-        let col = (self.cursor2.0).1 as f32;
-        let x = col * 10.0;
-        let y = (self.cursor2.0).0 as f32 * 19.0;
-        let s = format!("background-color: #7799bb; position: absolute; width: 2px; height: 19px; top: {}px; left: {}px; display: {};", y, x-1.0, if self.cursor2.0 == self.cursor2.1 { "block" } else { "None"});
-        let s_small = format!("background-color: #7799bb; position: absolute; width: 2px; height: 19px; top: {}px; left: {}px; display: {};", 19*self.cursor_small.0, (10*self.cursor_small.1)as isize - 1, if (self.cursor2.0).0 != (self.cursor2.1).0 { "block" } else { "None"});
+        let (w, h) = self.char_dimensions;
+
+        let x = (self.cursor2.0).1 as f32 * w;
+        let y = (self.cursor2.0).0 as f32 * h;
+        let s = format!("background-color: #7799bb; position: absolute; width: 2px; height: {}px; top: {}px; left: {}px; display: {};", h, y, x as i32 - 1, if self.cursor2.0 == self.cursor2.1 { "block" } else { "None"});
+        let s_small = format!("background-color: #7799bb; position: absolute; width: 2px; height: {}px; top: {}px; left: {}px; display: {};", h, h*self.cursor_small.0 as f32, w * self.cursor_small.1 as f32 - 1.0, if (self.cursor2.0).0 != (self.cursor2.1).0 { "block" } else { "None"});
         
         // cursor
-        let width_first_line = 10 * if (self.cursor2.0).0 == (self.cursor2.1).0 { 
+        let width_first_line = w * if (self.cursor2.0).0 == (self.cursor2.1).0 { 
             (self.cursor2.1).1 - (self.cursor2.0).1 
         } else {
             self.window_width - (self.cursor2.0).1
-        };
-        let first_line_style = format!("top: {}px; left: {}px; width: {}px;", 19*(self.cursor2.0).0, 10*(self.cursor2.0).1, width_first_line);
+        } as f32;
+        let first_line_style = format!("top: {}px; left: {}px; width: {}px; height: {}px;", h*(self.cursor2.0).0 as f32, w*(self.cursor2.0).1 as f32, width_first_line, h);
         let num_mid_lines = ((self.cursor2.1).0 - (self.cursor2.0).0).checked_sub(1).unwrap_or(0);
-        let mid_lines_style = format!("top: {}px; left: 0px; width: {}px; height: {}px;", 19*((self.cursor2.0).0 + 1), 10 * self.window_width, 19*num_mid_lines);
+        let mid_lines_style = format!("top: {}px; left: 0px; width: {}px; height: {}px;", h*((self.cursor2.0).0 + 1) as f32, w * self.window_width as f32, h*num_mid_lines as f32);
         let last_line_width = if (self.cursor2.0).0 == (self.cursor2.1).0 { 
             0
         }else{
             (self.cursor2.1).1
         };
-        let last_line_style = format!("top: {}px; left: 0px; width: {}px;", 19*(self.cursor2.1).0, 10 * last_line_width);
-        
+        let last_line_style = format!("top: {}px; left: 0px; width: {}px; height: {}px;", h*(self.cursor2.1).0 as f32, w * last_line_width as f32, h);
+        let div_style = format!("font-family: monospace; position: relative; font-size: {}pt;", text_size);
+
         html! {
             <div  >
                 <nav class="menu",>
@@ -186,8 +208,8 @@ impl Renderable<Model> for Model {
                     <button onclick=|_| Msg::ToggleAutoUpdate,>{ if self.auto_update {"Auto update ON"} else {"Auto update OFF"} }</button>
                     <input oninput=|e| Msg::UpdateWidth(e.value.parse().unwrap()), type="range", min="40", max="150", value="100", class="slider", style="width:500px", />
                 </nav>
-                <div style="width:80%; border: 1px solid black; padding: 10px;", onkeydown=|e| Msg::KeyEvt(e), tabindex="0", >
-                    <div style="font-family: monospace; position: relative; font-size: 12pt;", >
+                <div style="width:80%; border: 1px solid grey; padding: 10px;", onkeydown=|e| Msg::KeyEvt(e), tabindex="0", >
+                    <div style=div_style, >
                         <pre>{ self.text.clone() }</pre>
                         <div id="cursor", style=s, ></div>
                         <div class="area", style=first_line_style, ></div>
@@ -197,7 +219,6 @@ impl Renderable<Model> for Model {
                         <pre>{ format!("{}|", " ".repeat(self.window_width)) }</pre>
                     </div>
                 </div>
-                <span style="font-family: monospace; position: relative; font-size: 12pt;", > { self.window_width } </span>
             </div>
         }
     }
