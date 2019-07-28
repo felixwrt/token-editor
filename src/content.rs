@@ -6,6 +6,7 @@ pub struct Content {
     elmts: Vec<Elmt>,
     cursor: (usize, usize),  // first element is the index of the selected whitespace element.
                              // the sectond element is the selection index within that whitespace element
+    spacial_cursor: (usize, usize),
 }
 
 #[derive(Clone, Debug)]
@@ -124,7 +125,8 @@ impl Content {
 
         Content {
             elmts: elmts,
-            cursor: (0, 0)
+            cursor: (0, 0),
+            spacial_cursor: (0, 0),
         }
     }
 
@@ -181,8 +183,18 @@ impl Content {
         } else {
             start.clone()
         };
-        
+
         (start, end)
+    }
+
+    pub fn cursor_pos_2(&self) -> (CursorPos, (usize, usize)) {
+        let cursor_pos = self.cursor_pos();
+        let small = if self.spacial_cursor.0 == (cursor_pos.0).0 {
+            cursor_pos.0
+        } else {
+            cursor_pos.1
+        };
+        (cursor_pos, small)
     }
 
     pub fn cursor_left(&mut self) {
@@ -191,6 +203,7 @@ impl Content {
         } else if self.cursor.0 > 0 {
             self.cursor = (self.cursor.0 - 1, self.elmts[self.cursor.0 - 1].whitespace.get_num_cursor_positions() - 1);
         }
+        self.spacial_cursor = self.cursor_pos().1;
     }
 
     pub fn cursor_right(&mut self) {
@@ -199,6 +212,113 @@ impl Content {
         } else if self.cursor.0 < self.elmts.len() - 1 {
             self.cursor = (self.cursor.0 + 1, 0);
         }
+        self.spacial_cursor = self.cursor_pos().0;
+    }
+
+    pub fn cursor_down(&mut self) {
+        let target = (self.spacial_cursor.0+1, self.spacial_cursor.1);
+        let mut line = 0;
+        let mut col = 0;
+        for (i, chars) in self.elmts.iter().map(|x| x.get_string()).enumerate() {
+            for (j, c) in chars.chars().enumerate() {
+                if line == target.0 {
+                    self.cursor = (i, std::cmp::min(j, self.elmts[i].whitespace.get_num_cursor_positions()-1));
+                }
+                if (line == target.0 && col >= target.1) || line > target.0 {
+                    self.spacial_cursor = target;
+                    return;
+                }
+                if c == '\n' {
+                    col = 0;
+                    line += 1;
+                } else {
+                    col += 1;
+                }
+            }
+        }
+        self.cursor = (self.elmts.len()-1, self.elmts[self.elmts.len()-1].whitespace.get_num_cursor_positions()-1);
+        self.spacial_cursor = self.cursor_pos().0;
+    }
+
+    pub fn cursor_up(&mut self) {
+        let target = if self.spacial_cursor.0 > 0 {
+            (self.spacial_cursor.0-1, self.spacial_cursor.1)
+        } else {
+            (0, 0)
+        };
+        let mut line = 0;
+        let mut col = 0;
+        for (i, chars) in self.elmts.iter().map(|x| x.get_string()).enumerate() {
+            for (j, c) in chars.chars().enumerate() {
+                if line == target.0 {
+                    self.cursor = (i, std::cmp::min(j, self.elmts[i].whitespace.get_num_cursor_positions()-1));
+                }
+                if (line == target.0 && col >= target.1) || line > target.0 {
+                    self.spacial_cursor = target;
+                    return;
+                }
+                if c == '\n' {
+                    col = 0;
+                    line += 1;
+                } else {
+                    col += 1;
+                }
+            }
+        }
+
+        panic!("this shouldn't be possible!");
+    }
+
+    pub fn cursor_home(&mut self) {
+        let target = (self.spacial_cursor.0, 0);
+        let mut line = 0;
+        let mut col = 0;
+        for (i, chars) in self.elmts.iter().map(|x| x.get_string()).enumerate() {
+            for (j, c) in chars.chars().enumerate() {
+                if line == target.0 {
+                    self.cursor = (i, std::cmp::min(j, self.elmts[i].whitespace.get_num_cursor_positions()-1));
+                }
+                if (line == target.0 && col >= target.1) || line > target.0 {
+                    self.spacial_cursor = target;
+                    return;
+                }
+                if c == '\n' {
+                    col = 0;
+                    line += 1;
+                } else {
+                    col += 1;
+                }
+            }
+        }
+
+        panic!("this shouldn't be possible!");
+    }
+
+    pub fn cursor_end(&mut self) {
+        let target = (self.spacial_cursor.0, self.spacial_cursor.1);
+        let mut line = 0;
+        let mut col = 0;
+        let mut curr_col = 0;
+        for (i, chars) in self.elmts.iter().map(|x| x.get_string()).enumerate() {
+            for (j, c) in chars.chars().enumerate() {
+                if line == target.0 {
+                    self.cursor = (i, std::cmp::min(j, self.elmts[i].whitespace.get_num_cursor_positions()-1));
+                    curr_col = col;
+                }
+                if line > target.0 {
+                    self.spacial_cursor = (self.spacial_cursor.0, curr_col);
+                    return;
+                }
+                if c == '\n' {
+                    col = 0;
+                    line += 1;
+                } else {
+                    col += 1;
+                }
+            }
+        }
+        self.cursor = (self.elmts.len()-1, self.elmts[self.elmts.len()-1].whitespace.get_num_cursor_positions()-1);
+        self.spacial_cursor = self.cursor_pos().0;
     }
 
     pub fn insert(&mut self, c: char) {
@@ -208,6 +328,7 @@ impl Content {
             let ws_char = if c == '\n' { WhitespaceChar::Newline } else { WhitespaceChar::Space };
             self.elmts[self.cursor.0].whitespace.typed.insert(std::cmp::min(self.cursor.1, typed_len), ws_char);
             self.cursor.1 += 1;
+            self.spacial_cursor = self.cursor_pos().0;
             return;
         }
 
@@ -225,6 +346,7 @@ impl Content {
         self.elmts[self.cursor.0].whitespace.typed = ws_right;
         self.elmts.insert(self.cursor.0, new_elmt);
         self.cursor = (self.cursor.0 + 1, 0);
+        self.spacial_cursor = self.cursor_pos().0;
     }
 
     pub fn backspace(&mut self) {
@@ -233,6 +355,7 @@ impl Content {
                 self.elmts[self.cursor.0].whitespace.typed.remove(self.cursor.1 - 1);
             }
             self.cursor.1 -= 1;
+            self.spacial_cursor = self.cursor_pos().1;
         } else if self.cursor.0 > 0 {
             let ws_left = &self.elmts[self.cursor.0 - 1].whitespace;
             let ws_right = &self.elmts[self.cursor.0].whitespace;
@@ -251,6 +374,7 @@ impl Content {
             let cursor_new = (self.cursor.0 - 1, self.elmts[self.cursor.0 - 1].whitespace.get_num_cursor_positions() - 1);
             self.elmts.remove(self.cursor.0 - 1);
             self.cursor = cursor_new;
+            self.spacial_cursor = self.cursor_pos().1;
         }
     }
 
@@ -279,7 +403,8 @@ impl Content {
                     self.cursor.1, 
                     self.elmts[self.cursor.0].whitespace.get_num_cursor_positions() - 1
                 );
-                res
+                self.spacial_cursor = self.cursor_pos().0;
+                format!("Typed chars: {}, Displayed: {} ({}%)", s.len(), res.len(), s.len()*100/res.len())
             },
             None => "error".to_string()
         }

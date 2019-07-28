@@ -12,6 +12,7 @@ pub struct Model {
     text: String,
     //cursor: CursorPos,
     cursor2: ((usize, usize), (usize, usize)),
+    cursor_small: (usize, usize),
     content: Content,
     auto_update: bool,
     window_width: usize
@@ -23,6 +24,14 @@ pub enum Msg {
     Format,
     ToggleAutoUpdate,
     UpdateWidth(usize)
+}
+
+impl Model {
+    fn update_cursor(&mut self) {
+        let (cursor2, cursor_small) = self.content.cursor_pos_2();
+        self.cursor2 = cursor2;
+        self.cursor_small = cursor_small;
+    }
 }
 
 impl Component for Model {
@@ -40,6 +49,7 @@ impl Component for Model {
             text: content.get_string(),
             //cursor: content.cursor_pos(),
             cursor2: ((0, 11), (2, 4)),
+            cursor_small: (0, 0),
             content,
             auto_update: false,
             window_width: 100
@@ -54,11 +64,27 @@ impl Component for Model {
                 match e.key().as_ref() {
                     "ArrowLeft" => {
                         self.content.cursor_left();
-                        self.cursor2 = self.content.cursor_pos();
+                        self.update_cursor();
                     },
                     "ArrowRight" => {
                         self.content.cursor_right();
-                        self.cursor2 = self.content.cursor_pos();
+                        self.update_cursor();
+                    },
+                    "ArrowDown" => {
+                        self.content.cursor_down();
+                        self.update_cursor();
+                    },
+                    "ArrowUp" => {
+                        self.content.cursor_up();
+                        self.update_cursor();
+                    },
+                    "End" => {
+                        self.content.cursor_end();
+                        self.update_cursor();
+                    },
+                    "Home" => {
+                        self.content.cursor_home();
+                        self.update_cursor();
                     },
                     "Backspace" => {
                         self.content.backspace();
@@ -66,7 +92,7 @@ impl Component for Model {
                             let res = self.content.update_virtual_whitespace(self.window_width);
                             self.console.log(&res);
                         }
-                        self.cursor2 = self.content.cursor_pos();
+                        self.update_cursor();
                         self.text = self.content.get_string();
                     },
                     "Enter" => {
@@ -75,7 +101,7 @@ impl Component for Model {
                             let res = self.content.update_virtual_whitespace(self.window_width);
                             self.console.log(&res);
                         }
-                        self.cursor2 = self.content.cursor_pos();
+                        self.update_cursor();
                         self.text = self.content.get_string();
                     },
                     x if x.len() == 1 => {
@@ -84,7 +110,7 @@ impl Component for Model {
                             let res = self.content.update_virtual_whitespace(self.window_width);
                             self.console.log(&res);
                         }
-                        self.cursor2 = self.content.cursor_pos();
+                        self.update_cursor();
                         self.text = self.content.get_string();
                     },
                     _ => ()
@@ -95,13 +121,13 @@ impl Component for Model {
             },
             Msg::ClearVirtualWhitespace => {
                 self.content.clear_virtual_whitespace();
-                self.cursor2 = self.content.cursor_pos();
+                self.update_cursor();
                 self.text = self.content.get_string();
             },
             Msg::Format => {
                 let res = self.content.update_virtual_whitespace(self.window_width);
                 self.console.log(&res);
-                self.cursor2 = self.content.cursor_pos();
+                self.update_cursor();
                 self.text = self.content.get_string();
             },
             Msg::ToggleAutoUpdate => {
@@ -111,7 +137,7 @@ impl Component for Model {
                 self.window_width = n;
                 let res = self.content.update_virtual_whitespace(self.window_width);
                 self.console.log(&res);
-                self.cursor2 = self.content.cursor_pos();
+                self.update_cursor();
                 self.text = self.content.get_string();
             }
         }
@@ -125,6 +151,7 @@ impl Renderable<Model> for Model {
         let x = col * 10.0;
         let y = (self.cursor2.0).0 as f32 * 19.0;
         let s = format!("background-color: #7799bb; position: absolute; width: 2px; height: 19px; top: {}px; left: {}px; display: {};", y, x-1.0, if self.cursor2.0 == self.cursor2.1 { "block" } else { "None"});
+        let s_small = format!("background-color: #7799bb; position: absolute; width: 2px; height: 19px; top: {}px; left: {}px; display: {};", 19*self.cursor_small.0, (10*self.cursor_small.1)as isize - 1, if (self.cursor2.0).0 != (self.cursor2.1).0 { "block" } else { "None"});
         
         // cursor
         let width_first_line = 10 * if (self.cursor2.0).0 == (self.cursor2.1).0 { 
@@ -157,6 +184,7 @@ impl Renderable<Model> for Model {
                         <div class="area", style=first_line_style, ></div>
                         <div class="area", style=mid_lines_style, ></div>
                         <div class="area", style=last_line_style, ></div>
+                        <div id="cursor_small", style=s_small, ></div>
                         <pre>{ format!("{}|", " ".repeat(self.window_width)) }</pre>
                     </div>
                 </div>
