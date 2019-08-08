@@ -9,5 +9,9 @@ edition = "2018"
 [dependencies]
 stdweb = "0.4.15"
 yew = "0.6.0"
-rustfmt-nightly = "1.4"
+rustfmt-nightly = "1"
 
+
+[patch.crates-io]
+rustc-ap-syntax = { path = "/home/felix/tmp/rustc-ap-syntax-546.0.0" }
+rustfmt-nightly = { git = "https://github.com/rust-lang/rustfmt.git", rev = "c1d20e8e6eacda0d46d71c693b87a8c4b1b8ac67"}

@@ -443,13 +443,15 @@ pub fn prettify_code(input: String, window_width: usize) -> Option<String> {
         config.set().emit_mode(rustfmt_nightly::EmitMode::Stdout);
         config.set().edition(rustfmt_nightly::Edition::Edition2018);
         config.set().max_width(window_width);
+        config.set().verbose(rustfmt_nightly::Verbosity::Quiet);
+        config.set().hide_parse_errors(true);
         let mut session = rustfmt_nightly::Session::new(config, Some(&mut buf));
         session.format(rustfmt_nightly::Input::Text(input)).unwrap();
         if !session.has_no_errors() {
             return None
         }
     }
-    Some(String::from_utf8(buf[8..].to_vec()).unwrap())
+    Some(String::from_utf8(buf).unwrap())
 }
 
 #[cfg(test)]
