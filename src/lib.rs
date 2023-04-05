@@ -182,24 +182,43 @@ impl Component for Model {
         );
         
         // cursor
-        let width_first_line = w * if (self.cursor2.0).0 == (self.cursor2.1).0 { 
-            (self.cursor2.1).1 - (self.cursor2.0).1 
+        let width_first_line = if (self.cursor2.0).0 == (self.cursor2.1).0 { 
+            w * ((self.cursor2.1).1 - (self.cursor2.0).1) as f32
         } else {
-            self.window_width - (self.cursor2.0).1
-        } as f32;
-        let first_line_style = format!("top: {}px; left: {}px; width: {}px; height: {}px;", h*(self.cursor2.0).0 as f32, w*(self.cursor2.0).1 as f32, width_first_line, h);
-        let num_mid_lines = ((self.cursor2.1).0 - (self.cursor2.0).0).checked_sub(1).unwrap_or(0);
-        let mid_lines_style = format!("top: {}px; left: 0px; width: {}px; height: {}px;", h*((self.cursor2.0).0 + 1) as f32, w * self.window_width as f32, h*num_mid_lines as f32);
-        let last_line_width = if (self.cursor2.0).0 == (self.cursor2.1).0 { 
-            0
-        }else{
-            (self.cursor2.1).1
+            w * (self.window_width - (self.cursor2.0).1) as f32
         };
-        let last_line_style = format!("top: {}px; left: 0px; width: {}px; height: {}px;", h*(self.cursor2.1).0 as f32, w * last_line_width as f32, h);
-        let div_style = format!("font-family: monospace; position: relative; font-size: {}pt;width: {}ch;", TEXT_SIZE, self.window_width);
+        let first_line_style = format!("top: {}px; left: {}px; width: {}px; height: {}px;",
+            h*(self.cursor2.0).0 as f32, 
+            w*(self.cursor2.0).1 as f32 - 1.0, 
+            width_first_line, 
+            h
+        );
+        let num_mid_lines = ((self.cursor2.1).0 - (self.cursor2.0).0).checked_sub(1).unwrap_or(0);
+        let mid_lines_style = format!(
+            "top: {}px; left: -1px; width: {}px; height: {}px;", 
+            h*((self.cursor2.0).0 + 1) as f32, 
+            w * self.window_width as f32, 
+            h*num_mid_lines as f32
+        );
+        let last_line_width = if (self.cursor2.0).0 == (self.cursor2.1).0 { 
+            0.0
+        }else{
+            w * (self.cursor2.1).1 as f32
+        };
+        let last_line_style = format!(
+            "top: {}px; left: -1px; width: {}px; height: {}px;", 
+            h*(self.cursor2.1).0 as f32, 
+            last_line_width, 
+            h
+        );
+        let div_style = format!(
+            "font-family: monospace; position: relative; font-size: {}pt; width: {}ch;", 
+            TEXT_SIZE, 
+            self.window_width
+        );
 
         html! {
-            <div>
+            <div style="background-color: #eee; padding: 20px;">
                 <nav class="menu">
                     <button onclick={ctx.link().callback(|_| Msg::ClearVirtualWhitespace)}>{ "Clear virtual whitespace" }</button>
                     <button onclick={ctx.link().callback(|_| Msg::Format)}>{ "Update virtual whitespace" }</button>
@@ -209,15 +228,22 @@ impl Component for Model {
                     //     Msg::UpdateWidth(input.value().parse().unwrap())
                     // })} type="range" min="40" max="150" value="100" class="slider" style="width:500px" />
                 </nav>
-                <div style="width:80%; border: 1px solid grey; padding: 10px;" onkeydown={ctx.link().callback(|e| Msg::KeyEvt(e))} tabindex="0">
+                <div style="width: fit-content; padding: 1px; background-color: white;" onkeydown={ctx.link().callback(|e| Msg::KeyEvt(e))} tabindex="0">
                     <div style={div_style}>
                         <pre>{ self.text.clone() }</pre>
-                        if self.cursor2.0 == self.cursor2.1 { <div id="cursor" style={s}></div> }
-                        <div class="area" style={first_line_style}></div>
-                        <div class="area" style={mid_lines_style}></div>
-                        <div class="area" style={last_line_style}></div>
-                        if (self.cursor2.0).0 != (self.cursor2.1).0 { <div id="cursor_small" style={s_small}></div> }
-                        <pre>{ format!("{}|", " ".repeat(self.window_width)) }</pre>
+                        if self.cursor2.0 == self.cursor2.1 { 
+                            <div id="cursor" style={s}></div> 
+                        } else {
+                            <div class="area" style={first_line_style}></div>
+                            if num_mid_lines > 0 {
+                                <div class="area" style={mid_lines_style}></div>
+                            }
+                            if (self.cursor2.0).0 != (self.cursor2.1).0 {
+                                <div class="area" style={last_line_style}></div>
+                            }
+                            if (self.cursor2.0).0 != (self.cursor2.1).0 { <div id="cursor_small" style={s_small}></div> }
+                        }
+                        // <pre>{ format!("{}|", " ".repeat(self.window_width)) }</pre>
                     </div>
                 </div>
             </div>

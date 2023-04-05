@@ -11,4 +11,12 @@
 .area {
   position: absolute;
   background-color: #bbddff;
+  // border-left: 1px solid #bbddff;
+  border-right: 2px solid #bbddff;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
 }
