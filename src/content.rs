@@ -672,7 +672,6 @@ mod tests {
         assert_eq!(&content.get_string(), " df");
     }
 
-    
     #[test]
     #[ignore = "TODO: fixme"]
     fn test_delete_virtual_whitespace() {
