@@ -1,7 +1,4 @@
-use yew::{prelude::*, html, Component, Html, TargetCast};
-
-use web_sys::InputEvent;
-use web_sys::HtmlInputElement;
+use yew::{prelude::*, html, Component, Html};
 
 mod content;
 use content::{Content, GetString};
@@ -46,18 +43,16 @@ impl Component for Model {
         let typed = "fn test() {\n\n    let x = 1;\n}";
         let content = Content::from_strings(&typed, &typed);
 
-        use stdweb::web::IElement;
-        use stdweb::web::INode;
-        use stdweb::unstable::TryFrom;
-        use stdweb::web::IHtmlElement;
-        let elmt = stdweb::web::document().create_element("span").unwrap();
-        let text = stdweb::web::document().create_text_node("x");
-        elmt.append_child(&text);
-        elmt.set_attribute("style", &format!("font-family: monospace; position: absolute; top: -1000px; left: -1000px; font-size: {}pt;", TEXT_SIZE)).unwrap();
-        stdweb::web::document().body().unwrap().append_child(&elmt);
-        let rect = stdweb::web::HtmlElement::try_from(elmt).unwrap().get_bounding_client_rect();
-        web_sys::console::log_1(&format!("{}, {}", rect.get_width(), rect.get_height()).into());
+        let document = web_sys::window().unwrap().document().unwrap();
 
+        let elmt = document.create_element("span").unwrap();
+        let text = document.create_text_node("x");
+        elmt.append_child(&text).unwrap();
+        elmt.set_attribute("style", &format!("font-family: monospace; position: absolute; top: -1000px; left: -1000px; font-size: {}pt;", TEXT_SIZE)).unwrap();
+        document.body().unwrap().append_child(&elmt).unwrap();
+        let rect = elmt.get_bounding_client_rect();
+        let char_dimensions = (rect.width() as f32, rect.height() as f32);
+        web_sys::console::log_1(&format!("{}, {}", char_dimensions.0, char_dimensions.1).into());
 
         Model {
             text: content.get_string(),
@@ -67,7 +62,7 @@ impl Component for Model {
             content,
             auto_update: false,
             window_width: 100,
-            char_dimensions: (rect.get_width() as f32, rect.get_height() as f32)
+            char_dimensions,
         }
     }
 
@@ -173,8 +168,18 @@ impl Component for Model {
 
         let x = (self.cursor2.0).1 as f32 * w;
         let y = (self.cursor2.0).0 as f32 * h;
-        let s = format!("background-color: #7799bb; position: absolute; width: 2px; height: {}px; top: {}px; left: {}px; display: {};", h, y, x as i32 - 1, if self.cursor2.0 == self.cursor2.1 { "block" } else { "None"});
-        let s_small = format!("background-color: #7799bb; position: absolute; width: 2px; height: {}px; top: {}px; left: {}px; display: {};", h, h*self.cursor_small.0 as f32, w * self.cursor_small.1 as f32 - 1.0, if (self.cursor2.0).0 != (self.cursor2.1).0 { "block" } else { "None"});
+        let s = format!(
+            "background-color: #7799bb; position: absolute; width: 2px; height: {}px; top: {}px; left: {}px;", 
+            h, 
+            y, 
+            x as i32 - 1,
+        );
+        let s_small = format!(
+            "background-color: #7799bb; position: absolute; width: 2px; height: {}px; top: {}px; left: {}px;", 
+            h, 
+            h*self.cursor_small.0 as f32, 
+            w * self.cursor_small.1 as f32 - 1.0, 
+        );
         
         // cursor
         let width_first_line = w * if (self.cursor2.0).0 == (self.cursor2.1).0 { 
@@ -207,11 +212,11 @@ impl Component for Model {
                 <div style="width:80%; border: 1px solid grey; padding: 10px;" onkeydown={ctx.link().callback(|e| Msg::KeyEvt(e))} tabindex="0">
                     <div style={div_style}>
                         <pre>{ self.text.clone() }</pre>
-                        <div id="cursor" style={s}></div>
+                        if self.cursor2.0 == self.cursor2.1 { <div id="cursor" style={s}></div> }
                         <div class="area" style={first_line_style}></div>
                         <div class="area" style={mid_lines_style}></div>
                         <div class="area" style={last_line_style}></div>
-                        <div id="cursor_small" style={s_small}></div>
+                        if (self.cursor2.0).0 != (self.cursor2.1).0 { <div id="cursor_small" style={s_small}></div> }
                         <pre>{ format!("{}|", " ".repeat(self.window_width)) }</pre>
                     </div>
                 </div>
