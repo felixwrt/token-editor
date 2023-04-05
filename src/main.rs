@@ -1,3 +1,3 @@
 fn main() {
-    yew::start_app::<token_editor::Model>();
+    yew::Renderer::<token_editor::Model>::new().render();
 }

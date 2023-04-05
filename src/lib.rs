@@ -1,8 +1,7 @@
-use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
-use yew::services::ConsoleService;
-use stdweb::web::event::KeyDownEvent;
-use stdweb::web::event::IKeyboardEvent;
-use stdweb::web::event::IEvent;
+use yew::{prelude::*, html, Component, Html, TargetCast};
+
+use web_sys::InputEvent;
+use web_sys::HtmlInputElement;
 
 mod content;
 use content::{Content, GetString};
@@ -10,7 +9,6 @@ use content::{Content, GetString};
 const TEXT_SIZE: usize = 12;
 
 pub struct Model {
-    console: ConsoleService,
     text: String,
     //cursor: CursorPos,
     cursor2: ((usize, usize), (usize, usize)),
@@ -22,11 +20,11 @@ pub struct Model {
 }
 
 pub enum Msg {
-    KeyEvt(KeyDownEvent),
+    KeyEvt(KeyboardEvent),
     ClearVirtualWhitespace,
     Format,
     ToggleAutoUpdate,
-    UpdateWidth(usize)
+    // UpdateWidth(usize)
 }
 
 impl Model {
@@ -41,14 +39,12 @@ impl Component for Model {
     type Message = Msg;
     type Properties = ();
 
-    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         //let typed = "fn test(&self,  other:\n  \n&mut usize){let x=(self+1)*other;\n return1<y}";
         //let typed = "fn test(other:&mut usize){let array=[1123456, 531432124, 43241432, 4312432, 9432, 432,4328,432];let x=(self+1)*other;return 1<y}";
         let _visible = "fn test(other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
         let typed = "fn test() {\n\n    let x = 1;\n}";
         let content = Content::from_strings(&typed, &typed);
-
-        let mut console = ConsoleService::new();
 
         use stdweb::web::IElement;
         use stdweb::web::INode;
@@ -60,11 +56,10 @@ impl Component for Model {
         elmt.set_attribute("style", &format!("font-family: monospace; position: absolute; top: -1000px; left: -1000px; font-size: {}pt;", TEXT_SIZE)).unwrap();
         stdweb::web::document().body().unwrap().append_child(&elmt);
         let rect = stdweb::web::HtmlElement::try_from(elmt).unwrap().get_bounding_client_rect();
-        console.log(&format!("{}, {}", rect.get_width(), rect.get_height()));
+        web_sys::console::log_1(&format!("{}, {}", rect.get_width(), rect.get_height()).into());
 
 
         Model {
-            console: console,
             text: content.get_string(),
             //cursor: content.cursor_pos(),
             cursor2: ((0, 11), (2, 4)),
@@ -76,7 +71,7 @@ impl Component for Model {
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::KeyEvt(e) => {
                 e.stop_propagation();
@@ -109,8 +104,8 @@ impl Component for Model {
                     "Backspace" => {
                         self.content.backspace();
                         if self.auto_update {
-                            let res = self.content.update_virtual_whitespace(self.window_width);
-                            self.console.log(&res);
+                            let res = self.content.update_virtual_whitespace();
+                            web_sys::console::log_1(&res.into());
                         }
                         self.update_cursor();
                         self.text = self.content.get_string();
@@ -118,8 +113,8 @@ impl Component for Model {
                     "Delete" => {
                         self.content.delete();
                         if self.auto_update {
-                            let res = self.content.update_virtual_whitespace(self.window_width);
-                            self.console.log(&res);
+                            let res = self.content.update_virtual_whitespace();
+                            web_sys::console::log_1(&res.into());
                         }
                         self.update_cursor();
                         self.text = self.content.get_string();
@@ -127,8 +122,8 @@ impl Component for Model {
                     "Enter" => {
                         self.content.insert('\n');
                         if self.auto_update {
-                            let res = self.content.update_virtual_whitespace(self.window_width);
-                            self.console.log(&res);
+                            let res = self.content.update_virtual_whitespace();
+                            web_sys::console::log_1(&res.into());
                         }
                         self.update_cursor();
                         self.text = self.content.get_string();
@@ -136,15 +131,15 @@ impl Component for Model {
                     x if x.len() == 1 => {
                         self.content.insert(x.chars().next().unwrap());
                         if self.auto_update {
-                            let res = self.content.update_virtual_whitespace(self.window_width);
-                            self.console.log(&res);
+                            let res = self.content.update_virtual_whitespace();
+                            web_sys::console::log_1(&res.into());
                         }
                         self.update_cursor();
                         self.text = self.content.get_string();
                     },
                     _ => ()
                 }
-                self.console.log(&format!("{:?}", e.key()));
+                web_sys::console::log_1(&format!("{:?}", e.key()).into());
                 // FIXME: implement
                 
             },
@@ -154,28 +149,26 @@ impl Component for Model {
                 self.text = self.content.get_string();
             },
             Msg::Format => {
-                let res = self.content.update_virtual_whitespace(self.window_width);
-                self.console.log(&res);
+                let res = self.content.update_virtual_whitespace();
+                web_sys::console::log_1(&res.into());
                 self.update_cursor();
                 self.text = self.content.get_string();
             },
             Msg::ToggleAutoUpdate => {
                 self.auto_update = !self.auto_update;
             },
-            Msg::UpdateWidth(n) => {
-                self.window_width = n;
-                let res = self.content.update_virtual_whitespace(self.window_width);
-                self.console.log(&res);
-                self.update_cursor();
-                self.text = self.content.get_string();
-            }
+            // Msg::UpdateWidth(n) => {
+            //     self.window_width = n;
+            //     let res = self.content.update_virtual_whitespace(self.window_width);
+            //     web_sys::console::log_1(&res.into());
+            //     self.update_cursor();
+            //     self.text = self.content.get_string();
+            // }
         }
         true
     }
-}
 
-impl Renderable<Model> for Model {
-    fn view(&self) -> Html<Self> {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let (w, h) = self.char_dimensions;
 
         let x = (self.cursor2.0).1 as f32 * w;
@@ -198,24 +191,27 @@ impl Renderable<Model> for Model {
             (self.cursor2.1).1
         };
         let last_line_style = format!("top: {}px; left: 0px; width: {}px; height: {}px;", h*(self.cursor2.1).0 as f32, w * last_line_width as f32, h);
-        let div_style = format!("font-family: monospace; position: relative; font-size: {}pt;", TEXT_SIZE);
+        let div_style = format!("font-family: monospace; position: relative; font-size: {}pt;width: {}ch;", TEXT_SIZE, self.window_width);
 
         html! {
-            <div  >
-                <nav class="menu",>
-                    <button onclick=|_| Msg::ClearVirtualWhitespace,>{ "Clear virtual whitespace" }</button>
-                    <button onclick=|_| Msg::Format,>{ "Update virtual whitespace" }</button>
-                    <button onclick=|_| Msg::ToggleAutoUpdate,>{ if self.auto_update {"Auto update ON"} else {"Auto update OFF"} }</button>
-                    <input oninput=|e| Msg::UpdateWidth(e.value.parse().unwrap()), type="range", min="40", max="150", value="100", class="slider", style="width:500px", />
+            <div>
+                <nav class="menu">
+                    <button onclick={ctx.link().callback(|_| Msg::ClearVirtualWhitespace)}>{ "Clear virtual whitespace" }</button>
+                    <button onclick={ctx.link().callback(|_| Msg::Format)}>{ "Update virtual whitespace" }</button>
+                    <button onclick={ctx.link().callback(|_| Msg::ToggleAutoUpdate)}>{ if self.auto_update {"Auto update ON"} else {"Auto update OFF"} }</button>
+                    // <input oninput={ctx.link().callback(|e: InputEvent| {
+                    //     let input: HtmlInputElement = e.target_unchecked_into();
+                    //     Msg::UpdateWidth(input.value().parse().unwrap())
+                    // })} type="range" min="40" max="150" value="100" class="slider" style="width:500px" />
                 </nav>
-                <div style="width:80%; border: 1px solid grey; padding: 10px;", onkeydown=|e| Msg::KeyEvt(e), tabindex="0", >
-                    <div style=div_style, >
+                <div style="width:80%; border: 1px solid grey; padding: 10px;" onkeydown={ctx.link().callback(|e| Msg::KeyEvt(e))} tabindex="0">
+                    <div style={div_style}>
                         <pre>{ self.text.clone() }</pre>
-                        <div id="cursor", style=s, ></div>
-                        <div class="area", style=first_line_style, ></div>
-                        <div class="area", style=mid_lines_style, ></div>
-                        <div class="area", style=last_line_style, ></div>
-                        <div id="cursor_small", style=s_small, ></div>
+                        <div id="cursor" style={s}></div>
+                        <div class="area" style={first_line_style}></div>
+                        <div class="area" style={mid_lines_style}></div>
+                        <div class="area" style={last_line_style}></div>
+                        <div id="cursor_small" style={s_small}></div>
                         <pre>{ format!("{}|", " ".repeat(self.window_width)) }</pre>
                     </div>
                 </div>

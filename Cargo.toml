@@ -8,10 +8,14 @@ edition = "2018"
 
 [dependencies]
 stdweb = "0.4.15"
-yew = "0.6.0"
-rustfmt-nightly = "1"
+yew = { version="0.20", features=["csr"] }
+
+web-sys = { version = "0.3.61" }
+# rustfmt-nightly = { path = "../rustfmt" }
+prettyplease = "0.2.4"
+syn = { version = "2.0.13", features = ["full"] }
 
 
-[patch.crates-io]
-rustc-ap-syntax = { path = "/home/felix/tmp/rustc-ap-syntax-546.0.0" }
-rustfmt-nightly = { git = "https://github.com/rust-lang/rustfmt.git", rev = "c1d20e8e6eacda0d46d71c693b87a8c4b1b8ac67"}
+# [patch.crates-io]
+# # rustc-ap-syntax = { path = "/home/felix/tmp/rustc-ap-syntax-546.0.0" }
+# rustfmt-nightly = { git = "https://github.com/rust-lang/rustfmt.git", rev = "c1d20e8e6eacda0d46d71c693b87a8c4b1b8ac67"}
