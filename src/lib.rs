@@ -13,7 +13,7 @@ pub struct Model {
     content: Content,
     auto_update: bool,
     window_width: usize,
-    char_dimensions: (f32, f32)
+    char_dimensions: (f32, f32),
 }
 
 pub enum Msg {
@@ -54,7 +54,7 @@ impl Component for Model {
         let char_dimensions = (rect.width() as f32, rect.height() as f32);
         web_sys::console::log_1(&format!("{}, {}", char_dimensions.0, char_dimensions.1).into());
 
-        Model {
+        let mut model = Model {
             text: content.get_string(),
             //cursor: content.cursor_pos(),
             cursor2: ((0, 11), (2, 4)),
@@ -63,7 +63,9 @@ impl Component for Model {
             auto_update: false,
             window_width: 100,
             char_dimensions,
-        }
+        };
+        model.update_cursor();
+        model
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -164,6 +166,15 @@ impl Component for Model {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        static mut TICK: bool = false;
+        unsafe { TICK = !TICK; }
+
+        let blink_class = if unsafe{ TICK } {
+            "blink_me"
+        } else {
+            "blink_me2"
+        };
+
         let (w, h) = self.char_dimensions;
 
         let x = (self.cursor2.0).1 as f32 * w;
@@ -218,7 +229,7 @@ impl Component for Model {
         );
 
         html! {
-            <div style="background-color: #eee; padding: 20px;">
+            <div style="background-color: #eee; padding: 20px; height: 100%; box-sizing: border-box;">
                 <nav class="menu">
                     <button onclick={ctx.link().callback(|_| Msg::ClearVirtualWhitespace)}>{ "Clear virtual whitespace" }</button>
                     <button onclick={ctx.link().callback(|_| Msg::Format)}>{ "Update virtual whitespace" }</button>
@@ -228,20 +239,21 @@ impl Component for Model {
                     //     Msg::UpdateWidth(input.value().parse().unwrap())
                     // })} type="range" min="40" max="150" value="100" class="slider" style="width:500px" />
                 </nav>
-                <div style="width: fit-content; padding: 1px; background-color: white;" onkeydown={ctx.link().callback(|e| Msg::KeyEvt(e))} tabindex="0">
+                <div class="container" style="width: fit-content; padding: 1px; background-color: white;" onkeydown={ctx.link().callback(|e| Msg::KeyEvt(e))} tabindex="0">
                     <div style={div_style}>
                         <pre>{ self.text.clone() }</pre>
+                        
                         if self.cursor2.0 == self.cursor2.1 { 
-                            <div id="cursor" style={s}></div> 
+                            <div id="cursor" class={blink_class} style={s}></div> 
                         } else {
-                            <div class="area" style={first_line_style}></div>
+                            <div class={classes!("area",blink_class)} style={first_line_style}></div>
                             if num_mid_lines > 0 {
-                                <div class="area" style={mid_lines_style}></div>
+                                <div class={classes!("area",blink_class)} style={mid_lines_style}></div>
                             }
                             if (self.cursor2.0).0 != (self.cursor2.1).0 {
-                                <div class="area" style={last_line_style}></div>
+                                <div class={classes!("area",blink_class)} style={last_line_style}></div>
                             }
-                            if (self.cursor2.0).0 != (self.cursor2.1).0 { <div id="cursor_small" style={s_small}></div> }
+                            if (self.cursor2.0).0 != (self.cursor2.1).0 { <div id="cursor_small" class={blink_class} style={s_small}></div> }
                         }
                         // <pre>{ format!("{}|", " ".repeat(self.window_width)) }</pre>
                     </div>
