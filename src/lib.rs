@@ -1,4 +1,4 @@
-use yew::{prelude::*, html, Component, Html};
+use yew::{html, prelude::*, Component, Html};
 
 mod content;
 use content::{Content, GetString};
@@ -39,9 +39,10 @@ impl Component for Model {
     fn create(_ctx: &Context<Self>) -> Self {
         //let typed = "fn test(&self,  other:\n  \n&mut usize){let x=(self+1)*other;\n return1<y}";
         //let typed = "fn test(other:&mut usize){let array=[1123456, 531432124, 43241432, 4312432, 9432, 432,4328,432];let x=(self+1)*other;return 1<y}";
-        let _visible = "fn test(other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
+        let _visible =
+            "fn test(other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
         let typed = "fn test() {\n\n    let x = 1;\n}";
-        let content = Content::from_strings(&typed, &typed);
+        let content = Content::from_strings(typed, typed);
 
         let document = web_sys::window().unwrap().document().unwrap();
 
@@ -77,27 +78,27 @@ impl Component for Model {
                     "ArrowLeft" => {
                         self.content.cursor_left();
                         self.update_cursor();
-                    },
+                    }
                     "ArrowRight" => {
                         self.content.cursor_right();
                         self.update_cursor();
-                    },
+                    }
                     "ArrowDown" => {
                         self.content.cursor_down();
                         self.update_cursor();
-                    },
+                    }
                     "ArrowUp" => {
                         self.content.cursor_up();
                         self.update_cursor();
-                    },
+                    }
                     "End" => {
                         self.content.cursor_end();
                         self.update_cursor();
-                    },
+                    }
                     "Home" => {
                         self.content.cursor_home();
                         self.update_cursor();
-                    },
+                    }
                     "Backspace" => {
                         self.content.backspace();
                         if self.auto_update {
@@ -106,7 +107,7 @@ impl Component for Model {
                         }
                         self.update_cursor();
                         self.text = self.content.get_string();
-                    },
+                    }
                     "Delete" => {
                         self.content.delete();
                         if self.auto_update {
@@ -115,7 +116,7 @@ impl Component for Model {
                         }
                         self.update_cursor();
                         self.text = self.content.get_string();
-                    },
+                    }
                     "Enter" => {
                         self.content.insert('\n');
                         if self.auto_update {
@@ -124,7 +125,7 @@ impl Component for Model {
                         }
                         self.update_cursor();
                         self.text = self.content.get_string();
-                    },
+                    }
                     x if x.len() == 1 => {
                         self.content.insert(x.chars().next().unwrap());
                         if self.auto_update {
@@ -133,43 +134,43 @@ impl Component for Model {
                         }
                         self.update_cursor();
                         self.text = self.content.get_string();
-                    },
-                    _ => ()
+                    }
+                    _ => (),
                 }
                 web_sys::console::log_1(&format!("{:?}", e.key()).into());
                 // FIXME: implement
-                
-            },
+            }
             Msg::ClearVirtualWhitespace => {
                 self.content.clear_virtual_whitespace();
                 self.update_cursor();
                 self.text = self.content.get_string();
-            },
+            }
             Msg::Format => {
                 let res = self.content.update_virtual_whitespace();
                 web_sys::console::log_1(&res.into());
                 self.update_cursor();
                 self.text = self.content.get_string();
-            },
+            }
             Msg::ToggleAutoUpdate => {
                 self.auto_update = !self.auto_update;
-            },
-            // Msg::UpdateWidth(n) => {
-            //     self.window_width = n;
-            //     let res = self.content.update_virtual_whitespace(self.window_width);
-            //     web_sys::console::log_1(&res.into());
-            //     self.update_cursor();
-            //     self.text = self.content.get_string();
-            // }
+            } // Msg::UpdateWidth(n) => {
+              //     self.window_width = n;
+              //     let res = self.content.update_virtual_whitespace(self.window_width);
+              //     web_sys::console::log_1(&res.into());
+              //     self.update_cursor();
+              //     self.text = self.content.get_string();
+              // }
         }
         true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         static mut TICK: bool = false;
-        unsafe { TICK = !TICK; }
+        unsafe {
+            TICK = !TICK;
+        }
 
-        let blink_class = if unsafe{ TICK } {
+        let blink_class = if unsafe { TICK } {
             "blink_me"
         } else {
             "blink_me2"
@@ -181,51 +182,51 @@ impl Component for Model {
         let y = (self.cursor2.0).0 as f32 * h;
         let s = format!(
             "background-color: #7799bb; position: absolute; width: 2px; height: {}px; top: {}px; left: {}px;", 
-            h, 
-            y, 
+            h,
+            y,
             x as i32 - 1,
         );
         let s_small = format!(
             "background-color: #7799bb; position: absolute; width: 2px; height: {}px; top: {}px; left: {}px;", 
-            h, 
-            h*self.cursor_small.0 as f32, 
-            w * self.cursor_small.1 as f32 - 1.0, 
+            h,
+            h*self.cursor_small.0 as f32,
+            w * self.cursor_small.1 as f32 - 1.0,
         );
-        
+
         // cursor
-        let width_first_line = if (self.cursor2.0).0 == (self.cursor2.1).0 { 
+        let width_first_line = if (self.cursor2.0).0 == (self.cursor2.1).0 {
             w * ((self.cursor2.1).1 - (self.cursor2.0).1) as f32
         } else {
             w * (self.window_width - (self.cursor2.0).1) as f32
         };
-        let first_line_style = format!("top: {}px; left: {}px; width: {}px; height: {}px;",
-            h*(self.cursor2.0).0 as f32, 
-            w*(self.cursor2.0).1 as f32 - 1.0, 
-            width_first_line, 
+        let first_line_style = format!(
+            "top: {}px; left: {}px; width: {}px; height: {}px;",
+            h * (self.cursor2.0).0 as f32,
+            w * (self.cursor2.0).1 as f32 - 1.0,
+            width_first_line,
             h
         );
-        let num_mid_lines = ((self.cursor2.1).0 - (self.cursor2.0).0).checked_sub(1).unwrap_or(0);
+        let num_mid_lines = ((self.cursor2.1).0 - (self.cursor2.0).0).saturating_sub(1);
         let mid_lines_style = format!(
-            "top: {}px; left: -1px; width: {}px; height: {}px;", 
-            h*((self.cursor2.0).0 + 1) as f32, 
-            w * self.window_width as f32, 
-            h*num_mid_lines as f32
+            "top: {}px; left: -1px; width: {}px; height: {}px;",
+            h * ((self.cursor2.0).0 + 1) as f32,
+            w * self.window_width as f32,
+            h * num_mid_lines as f32
         );
-        let last_line_width = if (self.cursor2.0).0 == (self.cursor2.1).0 { 
+        let last_line_width = if (self.cursor2.0).0 == (self.cursor2.1).0 {
             0.0
-        }else{
+        } else {
             w * (self.cursor2.1).1 as f32
         };
         let last_line_style = format!(
-            "top: {}px; left: -1px; width: {}px; height: {}px;", 
-            h*(self.cursor2.1).0 as f32, 
-            last_line_width, 
+            "top: {}px; left: -1px; width: {}px; height: {}px;",
+            h * (self.cursor2.1).0 as f32,
+            last_line_width,
             h
         );
         let div_style = format!(
-            "font-family: monospace; position: relative; font-size: {}pt; width: {}ch;", 
-            TEXT_SIZE, 
-            self.window_width
+            "font-family: monospace; position: relative; font-size: {}pt; width: {}ch;",
+            TEXT_SIZE, self.window_width
         );
 
         html! {
@@ -239,12 +240,12 @@ impl Component for Model {
                     //     Msg::UpdateWidth(input.value().parse().unwrap())
                     // })} type="range" min="40" max="150" value="100" class="slider" style="width:500px" />
                 </nav>
-                <div class="container" style="width: fit-content; padding: 1px; background-color: white;" onkeydown={ctx.link().callback(|e| Msg::KeyEvt(e))} tabindex="0">
+                <div class="container" style="width: fit-content; padding: 1px; background-color: white;" onkeydown={ctx.link().callback(Msg::KeyEvt)} tabindex="0">
                     <div style={div_style}>
                         <pre>{ self.text.clone() }</pre>
-                        
-                        if self.cursor2.0 == self.cursor2.1 { 
-                            <div id="cursor" class={blink_class} style={s}></div> 
+
+                        if self.cursor2.0 == self.cursor2.1 {
+                            <div id="cursor" class={blink_class} style={s}></div>
                         } else {
                             <div class={classes!("area",blink_class)} style={first_line_style}></div>
                             if num_mid_lines > 0 {
