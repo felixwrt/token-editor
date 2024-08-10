@@ -4,14 +4,14 @@ use std::string::ToString;
 pub struct Content {
     elmts: Vec<Elmt>,
     cursor: (usize, usize), // first element is the index of the selected whitespace element.
-    // the sectond element is the selection index within that whitespace element
+    // the second element is the selection index within that whitespace element
     spacial_cursor: (usize, usize),
 }
 
 #[derive(Clone, Debug)]
 pub struct Elmt {
     character: char,
-    whitespace: Whitespace, // whitespace that's preceeding the character
+    whitespace: Whitespace, // whitespace that's preceding the character
 }
 
 #[derive(Clone, Debug)]
@@ -496,7 +496,7 @@ impl Content {
         clone.clear_virtual_whitespace();
         let s = clone.get_string();
 
-        // pass that string to rustfmt
+        // pass that string to prettyplease
         match prettify_code(s.clone()) {
             Some(res) => {
                 self.update_virtual_whitespace_2(&res);

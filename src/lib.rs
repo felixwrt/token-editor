@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use yew::{html, prelude::*, Component, Html};
 
 mod content;
@@ -61,7 +63,7 @@ impl Component for Model {
             cursor2: ((0, 11), (2, 4)),
             cursor_small: (0, 0),
             content,
-            auto_update: false,
+            auto_update: true,
             window_width: 100,
             char_dimensions,
         };
@@ -165,16 +167,16 @@ impl Component for Model {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        static mut TICK: bool = false;
-        unsafe {
-            TICK = !TICK;
-        }
+        static TICK: AtomicBool = AtomicBool::new(false);
 
-        let blink_class = if unsafe { TICK } {
-            "blink_me"
-        } else {
-            "blink_me2"
-        };
+        // toggle TICK
+        let tick = !TICK.load(Ordering::SeqCst);
+        TICK.store(tick, Ordering::SeqCst);
+
+        // switching between two different classes that are equivalent here to force the animation to
+        // start again whenever view is called. The effect is that the cursor immediately becomes visible
+        // when moving around
+        let blink_class = if tick { "blink_me" } else { "blink_me2" };
 
         let (w, h) = self.char_dimensions;
 
