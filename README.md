@@ -18,19 +18,19 @@ I think it's best shown with an example:
 
 In the video below, I'm doing a simple text edit, typing the characters ` = a - b` and moving the cursor around:
 
-doc/example_manual_with_ws.mp4
+https://github.com/user-attachments/assets/87eebca5-e3de-430f-b02e-f27e57f9d396
 
 Not that I'm typing the three space characters myself. When moving the cursor, I need to do extra key presses to move over the whitespace characters.
 
 An alternative that requires less typing is to omit space characters that aren't necessary. Typing the same code, but without spaces (`=a-b`):
 
-doc/example_manual_no_ws.mp4
+https://github.com/user-attachments/assets/27c1b991-cbfe-4d09-bf97-4a2293a5d6c6
 
 In this second video, I typed less characters (4 instead of 7) and because there are fewer characters, moving the cursor back to the start of the code requires less typing. The downside though is that the code looks ugly and would have bad readability in any non-trivial case.
 
 This experiment tries to combine the readability of having optional whitespace characters with the editing experience of not having them:
 
-doc/example_virtual_whitespace.mp4
+https://github.com/user-attachments/assets/9a5f0297-5a04-4a47-9ba8-27ed3402b90c
 
 In the video above, I'm typing the same characters as in the previous video (`=a-b`). The editor automatically displays spaces I haven't typed to make the code look nice. These spaces also can't be selected, so moving the cursor behaves like in the previous video where I didn't have any spaces.
 
@@ -54,6 +54,8 @@ The implementation seems to work fine, but I haven't used it beyond simple examp
 
 ## Discussion
 
-Would I want to use something like this? I don't know. I could imagine that editing like this could feel very fluent and nice. On the other hand, it's not easy to see where virtual whitespace is used compared to typed whitespace characters (which are still needed in some places, e.g. between keywords like `pub fn`). Updating the virtual whitespace is also only possible if the code formatter is able to format the code. When editing, the code is often in a state that doesn't parse correctly, and if that's the case, the virtual whitespace also cannot be updated. This leads to unformatted output until the code has been reworked to parse again. When that's the case, the code suddenly changes shape and looks differently. This is something I'd need to get used to. A code formatter that can work with code containing errors might be a big improvement.
+Would I want to use something like this? I don't know. 
 
-What do you think about this?
+I could imagine that editing like this could feel very fluent and nice. On the other hand, it's not easy to see where virtual whitespace is used compared to typed whitespace characters (which are still needed in some places, e.g. between keywords like `pub fn`). Updating the virtual whitespace is also only possible if the code formatter is able to format the code. When editing, the code is often in a state that doesn't parse correctly, and if that's the case, the virtual whitespace also cannot be updated. This leads to unformatted output until the code has been reworked to parse again. When that's the case, the code suddenly changes shape and looks differently. This is something I'd need to get used to. A code formatter that can work with code containing errors might be a big improvement.
+
+What's your take on this?
