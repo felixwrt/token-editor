@@ -107,4 +107,4 @@ jobs:
           directory: dist-for-deploy
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           wranglerVersion: '3'
-          branch: deploy
+          branch: ${{ env.GITHUB_HEAD_REF }}
