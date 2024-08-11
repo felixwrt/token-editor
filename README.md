@@ -1,8 +1,8 @@
 # Token Editor
 
-This repo contains an old experiment that I did in 2019, exploring an idea to make code editing more ergonomic. I updated the code and documented the project in 2024. I don't plan to do any maintenance work on it, but I'm always happy to hear your thoughts regarding this project and related ideas. Write me an [email](mailto:me@felixwrt.dev)!
+This repo contains an old experiment that I did in 2019, exploring an idea to make code editing more ergonomic. I updated the code and documented the project in 2024. I don't plan to do any further development on it, but I'm always happy to hear your thoughts regarding this project and related ideas. Write me an [email](mailto:me@felixwrt.dev)!
 
-[**Live demo**](TODO) (should be used on a Desktop, mobile likely doesn't work right)
+[**Live demo**](https://token-editor.pages.dev/) (should be used on a Desktop, mobile likely doesn't work right)
 
 See below for more info.
 
@@ -20,7 +20,7 @@ In the video below, I'm doing a simple text edit, typing the characters ` = a - 
 
 https://github.com/user-attachments/assets/87eebca5-e3de-430f-b02e-f27e57f9d396
 
-Not that I'm typing the three space characters myself. When moving the cursor, I need to do extra key presses to move over the whitespace characters.
+Note that I'm typing the three space characters myself. When moving the cursor, I need to do extra key presses to move over the whitespace characters.
 
 An alternative that requires less typing is to omit space characters that aren't necessary. Typing the same code, but without spaces (`=a-b`):
 
