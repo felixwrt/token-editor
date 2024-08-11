@@ -98,6 +98,8 @@ jobs:
           path: dist-for-deploy
       - name: printenv
         run: printenv
+      - name: foo
+        run: echo ${{ env.GITHUB_HEAD_REF }}
       - name: Publish
         uses: cloudflare/pages-action@v1.5.0
         with:
@@ -107,3 +109,4 @@ jobs:
           directory: dist-for-deploy
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           wranglerVersion: '3'
+          branch: ${{ env.GITHUB_HEAD_REF }}
