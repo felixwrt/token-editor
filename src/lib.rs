@@ -43,8 +43,9 @@ impl Component for Model {
         //let typed = "fn test(other:&mut usize){let array=[1123456, 531432124, 43241432, 4312432, 9432, 432,4328,432];let x=(self+1)*other;return 1<y}";
         let _visible =
             "fn test(other: &mut usize) {\n    let x = (self + 1) * other;\n    return 1 < y\n}";
-        let typed = "fn test() {\n\n    let x = 1;\n}";
-        let content = Content::from_strings(typed, typed);
+        let typed = "fn test(){let x=1+2-3;}";
+        let mut content = Content::from_strings(typed, typed);
+        content.update_virtual_whitespace();
 
         let document = web_sys::window().unwrap().document().unwrap();
 
