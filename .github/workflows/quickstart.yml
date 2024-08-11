@@ -100,3 +100,4 @@ jobs:
           projectName: token-editor
           directory: dist-for-deploy
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: foo_bar
